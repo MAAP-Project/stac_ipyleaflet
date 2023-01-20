@@ -97,6 +97,7 @@ def add_biomass_layers(m):
             tile_layer = TileLayer(url=tile_url, attribution=name, name=name, visible=False)
             m.add_layer(tile_layer)
 
+titiler_url = "https://titiler.maap-project.org"
 def create_histograms(m, draw_control):
     minx, maxx = [0, 500]
     plot_args = {"range": (minx, maxx)}

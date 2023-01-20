@@ -1,6 +1,8 @@
 # STAC ipyleaflet
 
-IN DEVELOPMENT. Right now this as nothing to do with STAC but demonstrates loading layers into ipyleaflet and creating histograms from a bounding box and visible layers.
+WORK IN PROGRESS. Right now this does nothing with STAC. Currently this provides a module on top of ipyleaflet demonstrating how to load tile layers (from `biomass-layers.csv` and create histograms from a bounding box and visible layers.
+
+![Jupyter Lab ScreenShot](jlab-screenshot.png)
 
 ## Requirements
 
