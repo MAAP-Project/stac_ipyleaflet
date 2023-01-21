@@ -1,6 +1,7 @@
 ipyleaflet==0.17.2
 ipywidgets==8.0.4
 matplotlib
+pydantic
 shapely
 requests
 rioxarray
