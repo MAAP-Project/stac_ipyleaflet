@@ -4,5 +4,6 @@ matplotlib
 pydantic
 shapely
 requests
+rio_tiler
 rioxarray
 xarray
