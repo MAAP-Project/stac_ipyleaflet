@@ -15,6 +15,7 @@ from shapely.geometry import Polygon
 import rioxarray
 import xarray as xr
 import numpy
+import numpy.ma as ma
 from rio_tiler.io import Reader
 from rio_tiler.mosaic import mosaic_reader
 from rio_tiler.models import ImageData
@@ -37,7 +38,7 @@ class StacIpyleaflet(Map):
         super().__init__(**kwargs)
 
         # Add rectangle draw control for bounding box
-        # TODO(aimee): can we remove the other draw controls?
+        # TODO(aimee): Remove the other draw controls
         self.selected_data = []
         self.draw_control = None
         draw_control = DrawControl(
@@ -116,39 +117,45 @@ class StacIpyleaflet(Map):
                 tile_layer = TileLayer(url=tile_url, attribution=name, name=name, visible=False)
                 self.add_layer(tile_layer)
 
-    def gen_mosaic_dataset_reader(selv, assets, bounds):
+    def gen_mosaic_dataset_reader(self, assets, bounds):
         # see https://github.com/cogeotiff/rio-tiler/blob/main/rio_tiler/io/rasterio.py#L368-L380
         def _part_read(src_path: str, *args, **kwargs) -> ImageData:
             with Reader(src_path) as src:
                 return src.part(bounds, *args, **kwargs)
         # mosaic_reader will use multithreading to distribute the image fetching 
-        # and them merge all arrays together
-        img, _ = mosaic_reader(assets, reader=_part_read, max_size=512) # change the max_size to make it faster/slower 
+        # and then merge all arrays together
+        # Vincent: This will not work if the image do not have the same resolution (because we won't be able to overlay them). if you know the resolution you want to use you can use width=.., height=.. instead of max_size=512 (it will ensure you create the same array size for all the images.
+        # change the max_size to make it faster/slower
+        img, _ = mosaic_reader(assets, reader=_part_read, max_size=512)
 
         data = img.as_masked()  # create Masked Array from ImageData
         # Avoid non masked nan/inf values
         numpy.ma.fix_invalid(data, copy=False)
+        # TODO(aimee): determine if this might help for creating the histograms quickly
+        # hist = {}
+        # for ii, b in enumerate(img.count):
+        #     h_counts, h_keys = numpy.histogram(data[b].compressed())
+        #     hist[f"b{ii + 1}"] = [h_counts.tolist(), h_keys.tolist()]        
         return xr.DataArray(data)
     
-    # TODO(aimee): compare performance, but right now this generates an error 
-    # ValueError: Could not find any dimension coordinates to use to order the datasets for concatenation
     def gen_mosaic_dataset_crop(self, assets, str_bounds):
         datasets = []
         for asset in assets:
-            try:
-                crop_endpoint = f"{self.titiler_url}/cog/crop/{str_bounds}.npy?url={asset}&max_size=512"  # Same here you can either use max_size or width&height
-                res = requests.get(crop_endpoint)
-                arr = numpy.load(BytesIO(res.content))
-                tile, mask = arr[0:-1], arr[-1]
-
-                # TODO:
-                # convert tile/mask to xarray dataset
+            # get fill value
+            asset_endpoint = f"{self.titiler_url}/cog/info?url={asset}"
+            res = requests.get(asset_endpoint)
+            no_data = res.json()['nodata_value']
+            
+            crop_endpoint = f"{self.titiler_url}/cog/crop/{str_bounds}.npy?url={asset}&max_size=512"  # Same here you can either use max_size or width & height
+            res = requests.get(crop_endpoint)
+            arr = numpy.load(BytesIO(res.content))
+            tile, mask = arr[0:-1], arr[-1]
+            ds = ma.masked_values(tile, int(no_data))
+            if ds.any() == True:
                 ds = xr.DataArray(tile)
                 datasets.append(ds)
-            except:
-                pass
-
-        ds = xr.combine_by_coords(datasets) #, fill_value=datasets[0]._FillValue)        
+        # TODO(aimee): this will probably error if there is more than 1 dataset, since there are no coordinates set, so we need to figure how to combine these datasets
+        return xr.combine_by_coords(datasets)      
 
     def update_selected_data(self):
         layers = self.layers
@@ -181,6 +188,7 @@ class StacIpyleaflet(Map):
                 self.selected_data.append(ds1)
         return self.selected_data
 
+    # TODO(aimee): if you try and create a histogram for more than one layer, it creates duplicates in the popup
     def create_histograms(self, b):
         print("in create histograms")
         minx, maxx = [0, 500]
