@@ -213,7 +213,6 @@ class StacIpyleaflet(Map):
         else:
             for idx, dataset in enumerate(self.selected_data):
                 axes = fig.add_subplot(int(f"22{idx+1}"))
-                print(f"idx is {idx}")
                 plot_args['ax'] = axes
                 # create a histogram
                 with out:
