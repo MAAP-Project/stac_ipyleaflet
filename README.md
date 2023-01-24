@@ -12,7 +12,7 @@ Much of this is inspired and copied from [leafmap](https://leafmap.org/)
 
 ## Setup
 
-For demo purposes, `write_biomass_layers.py` is a script which requires
+For demo purposes, `write_biomass_layers.py` creates a CSV file with current map layers.
 ```sh
 conda create -n stac_ipyleaflet python=3.9
 conda activate stac_ipyleaflet
