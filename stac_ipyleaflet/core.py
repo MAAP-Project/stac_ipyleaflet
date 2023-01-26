@@ -9,6 +9,7 @@ import requests
 from ipyleaflet import Map, DrawControl, WidgetControl, TileLayer, Popup
 from IPython.display import display
 import ipywidgets
+from ipywidgets import HTML
 import matplotlib.pyplot as plt
 #from pydantic import BaseModel
 from shapely.geometry import Polygon
@@ -27,6 +28,7 @@ class StacIpyleaflet(Map):
     draw_control: DrawControl
     titiler_url: str = "https://titiler.maap-project.org"
     histogram_layer: Popup
+    warning_layer: Popup = None 
 
     def __init__(self, **kwargs):
         if "center" not in kwargs:
@@ -208,6 +210,14 @@ class StacIpyleaflet(Map):
         if len(self.selected_data) == 0:
             with out:
                 print("No data selected")
+                if self.warning_layer:
+                    self.remove_layer(self.warning_layer)
+                
+                warning_msg = HTML()
+                warning_msg.value="<b>No data selected!</b>"
+                popup_warning = Popup(location=[20, 0], draggable=True, child=warning_msg)
+                self.warning_layer=popup_warning
+                self.add_layer(popup_warning);
                 display()
                 return
         else:
