@@ -215,9 +215,10 @@ class StacIpyleaflet(Map):
                 
                 warning_msg = HTML()
                 warning_msg.value="<b>No data selected!</b>"
-                popup_warning = Popup(location=[20, 0], draggable=True, child=warning_msg)
+                popup_warning = Popup(draggable=True, child=warning_msg)
                 self.warning_layer=popup_warning
                 self.add_layer(popup_warning);
+                self.zoom=2
                 display()
                 return
         else:
