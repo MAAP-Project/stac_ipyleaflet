@@ -141,27 +141,6 @@ class StacIpyleaflet(Map):
         #     h_counts, h_keys = numpy.histogram(data[b].compressed())
         #     hist[f"b{ii + 1}"] = [h_counts.tolist(), h_keys.tolist()]        
         return xr.DataArray(data)
-    
-    # This is an alternative to the gen_mosaic_dataset_reader   
-    def gen_mosaic_dataset_crop(self, assets, str_bounds):
-        datasets = []
-        for asset in assets:
-            # get fill value
-            asset_endpoint = f"{self.titiler_url}/cog/info?url={asset}"
-            res = requests.get(asset_endpoint)
-            no_data = res.json()['nodata_value']
-            
-            # TODO(aimee): make max_size configurable
-            crop_endpoint = f"{self.titiler_url}/cog/crop/{str_bounds}.npy?url={asset}&max_size=512"  # Same here you can either use max_size or width & height
-            res = requests.get(crop_endpoint)
-            arr = numpy.load(BytesIO(res.content))
-            tile, mask = arr[0:-1], arr[-1]
-            ds = ma.masked_values(tile, int(no_data))
-            if ds.any() == True:
-                ds = xr.DataArray(tile)
-                datasets.append(ds)
-        # TODO(aimee): this will probably error if there is more than 1 dataset, since there are no coordinates set, so we need to figure how to combine these datasets
-        return xr.combine_by_coords(datasets)      
 
     def update_selected_data(self):
         layers = self.layers
