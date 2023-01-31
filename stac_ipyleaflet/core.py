@@ -125,6 +125,7 @@ class StacIpyleaflet(Map):
         # see https://github.com/cogeotiff/rio-tiler/blob/main/rio_tiler/io/rasterio.py#L368-L380
         def _part_read(src_path: str, *args, **kwargs) -> ImageData:
             with Reader(src_path) as src:
+                # src.part((minx, miny, maxx, maxy), **kwargs)
                 return src.part(bounds, *args, **kwargs)
         # mosaic_reader will use multithreading to distribute the image fetching 
         # and then merge all arrays together
@@ -142,27 +143,6 @@ class StacIpyleaflet(Map):
         #     h_counts, h_keys = numpy.histogram(data[b].compressed())
         #     hist[f"b{ii + 1}"] = [h_counts.tolist(), h_keys.tolist()]        
         return xr.DataArray(data)
-    
-    # This is an alternative to the gen_mosaic_dataset_reader   
-    def gen_mosaic_dataset_crop(self, assets, str_bounds):
-        datasets = []
-        for asset in assets:
-            # get fill value
-            asset_endpoint = f"{self.titiler_url}/cog/info?url={asset}"
-            res = requests.get(asset_endpoint)
-            no_data = res.json()['nodata_value']
-            
-            # TODO(aimee): make max_size configurable
-            crop_endpoint = f"{self.titiler_url}/cog/crop/{str_bounds}.npy?url={asset}&max_size=512"  # Same here you can either use max_size or width & height
-            res = requests.get(crop_endpoint)
-            arr = numpy.load(BytesIO(res.content))
-            tile, mask = arr[0:-1], arr[-1]
-            ds = ma.masked_values(tile, int(no_data))
-            if ds.any() == True:
-                ds = xr.DataArray(tile)
-                datasets.append(ds)
-        # TODO(aimee): this will probably error if there is more than 1 dataset, since there are no coordinates set, so we need to figure how to combine these datasets
-        return xr.combine_by_coords(datasets)      
 
     def update_selected_data(self):
         layers = self.layers
@@ -172,6 +152,8 @@ class StacIpyleaflet(Map):
         geometries = [self.draw_control.last_draw['geometry']]
         if geometries[0]:
             box = Polygon(geometries[0]['coordinates'][0])
+            # https://shapely.readthedocs.io/en/latest/reference/shapely.bounds.html?highlight=bounds#shapely.bounds
+            # For each geometry these 4 numbers are returned: min x, min y, max x, max y.
             bounds = box.bounds
             for idx, layer in enumerate(visible_layers):
                 layer_url = layer.url
@@ -180,11 +162,15 @@ class StacIpyleaflet(Map):
                 if match and match.group(1):
                     s3_url = match.group(1)
                     xds = rioxarray.open_rasterio(s3_url)
+                    # we slice in using slice(maxy, miny) becase
+                    # y will be high to low whenever the origin = upper left corner
+                    # Aimee(TODO): need a way to check into this assumpation (origin = upper left corner)
                     ds = xds.sel(x=slice(bounds[0], bounds[2]), y=slice(bounds[3], bounds[1]))
                 else:
                     match = re.search('(https://.+)/tiles', layer_url)
                     if match:
                         mosaic_url = match.groups()[0]
+                        # /mosaicjson/{minx},{miny},{maxx},{maxy}/assets
                         str_bounds = f"{bounds[0]},{bounds[1]},{bounds[2]},{bounds[3]}"
                         assets_endpoint = f"{self.titiler_url}/mosaicjson/{str_bounds}/assets?url={mosaic_url}/mosaicjson"
                         # create a dataset from multiple COGs
