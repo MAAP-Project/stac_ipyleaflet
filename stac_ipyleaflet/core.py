@@ -123,6 +123,7 @@ class StacIpyleaflet(Map):
         # see https://github.com/cogeotiff/rio-tiler/blob/main/rio_tiler/io/rasterio.py#L368-L380
         def _part_read(src_path: str, *args, **kwargs) -> ImageData:
             with Reader(src_path) as src:
+                # src.part((minx, miny, maxx, maxy), **kwargs)
                 return src.part(bounds, *args, **kwargs)
         # mosaic_reader will use multithreading to distribute the image fetching 
         # and then merge all arrays together
@@ -170,6 +171,8 @@ class StacIpyleaflet(Map):
         geometries = [self.draw_control.last_draw['geometry']]
         if geometries[0]:
             box = Polygon(geometries[0]['coordinates'][0])
+            # https://shapely.readthedocs.io/en/latest/reference/shapely.bounds.html?highlight=bounds#shapely.bounds
+            # For each geometry these 4 numbers are returned: min x, min y, max x, max y.
             bounds = box.bounds
             for idx, layer in enumerate(visible_layers):
                 layer_url = layer.url
@@ -178,11 +181,15 @@ class StacIpyleaflet(Map):
                 if match and match.group(1):
                     s3_url = match.group(1)
                     xds = rioxarray.open_rasterio(s3_url)
+                    # we slice in using slice(maxy, miny) becase
+                    # y will be high to low whenever the origin = upper left corner
+                    # Aimee(TODO): need a way to check into this assumpation (origin = upper left corner)
                     ds = xds.sel(x=slice(bounds[0], bounds[2]), y=slice(bounds[3], bounds[1]))
                 else:
                     match = re.search('(https://.+)/tiles', layer_url)
                     if match:
                         mosaic_url = match.groups()[0]
+                        # /mosaicjson/{minx},{miny},{maxx},{maxy}/assets
                         str_bounds = f"{bounds[0]},{bounds[1]},{bounds[2]},{bounds[3]}"
                         assets_endpoint = f"{self.titiler_url}/mosaicjson/{str_bounds}/assets?url={mosaic_url}/mosaicjson"
                         # create a dataset from multiple COGs
