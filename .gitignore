@@ -104,10 +104,3 @@ ENV/
 # IDE settings
 .vscode/
 .idea/
-
-# EO data files
-*.tif
-*.h5
-*.txt
-*.xml
-*.tar
