@@ -129,13 +129,15 @@ class StacIpyleaflet(Map):
                 return src.part(bounds, *args, **kwargs)
         # mosaic_reader will use multithreading to distribute the image fetching 
         # and then merge all arrays together
-        # Vincent: This will not work if the image do not have the same resolution (because we won't be able to overlay them). if you know the resolution you want to use you can use width=.., height=.. instead of max_size=512 (it will ensure you create the same array size for all the images.
+        # Vincent: This will not work if the image do not have the same resolution (because we won't be able to overlay them).
+        # If you know the resolution you want to use you can use width=.., height=.. instead of max_size=512 (it will ensure you create the same array size for all the images.
         # change the max_size to make it faster/slower
         # TODO(aimee): make this configurable
         img, _ = mosaic_reader(assets, reader=_part_read, max_size=512)
 
-        data = img.as_masked()  # create Masked Array from ImageData
-        # Avoid non masked nan/inf values
+        # create Masked Array from ImageData
+        data = img.as_masked()
+        # Avoid non-masked nan/inf values
         numpy.ma.fix_invalid(data, copy=False)
         # TODO(aimee): determine if this might help for creating the histograms quickly
         # hist = {}
@@ -153,7 +155,7 @@ class StacIpyleaflet(Map):
         if geometries[0]:
             box = Polygon(geometries[0]['coordinates'][0])
             # https://shapely.readthedocs.io/en/latest/reference/shapely.bounds.html?highlight=bounds#shapely.bounds
-            # For each geometry these 4 numbers are returned: min x, min y, max x, max y.
+            # For geometries these 4 numbers are returned: min x, min y, max x, max y.
             bounds = box.bounds
             for idx, layer in enumerate(visible_layers):
                 layer_url = layer.url
@@ -162,18 +164,19 @@ class StacIpyleaflet(Map):
                 if match and match.group(1):
                     s3_url = match.group(1)
                     xds = rioxarray.open_rasterio(s3_url)
-                    # we slice in using slice(maxy, miny) becase
-                    # y will be high to low whenever the origin = upper left corner
-                    # Aimee(TODO): need a way to check into this assumpation (origin = upper left corner)
+                    # Slice into `y` using slice(maxy, miny) because
+                    # `y` will be high to low typically because origin = upper left corner
+                    # Aimee(TODO): Check the assumpation (origin = upper left corner)
                     ds = xds.sel(x=slice(bounds[0], bounds[2]), y=slice(bounds[3], bounds[1]))
                 else:
+                    # create a dataset from multiple COGs
                     match = re.search('(https://.+)/tiles', layer_url)
                     if match:
                         mosaic_url = match.groups()[0]
+                        # From titiler docs http://titiler.maap-project.org/docs
                         # /mosaicjson/{minx},{miny},{maxx},{maxy}/assets
                         str_bounds = f"{bounds[0]},{bounds[1]},{bounds[2]},{bounds[3]}"
                         assets_endpoint = f"{self.titiler_url}/mosaicjson/{str_bounds}/assets?url={mosaic_url}/mosaicjson"
-                        # create a dataset from multiple COGs
                         assets_response = requests.get(assets_endpoint)
                         datasets = []
                         assets = assets_response.json()
