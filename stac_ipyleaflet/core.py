@@ -166,7 +166,7 @@ class StacIpyleaflet(Map):
                     xds = rioxarray.open_rasterio(s3_url)
                     # Slice into `y` using slice(maxy, miny) because
                     # `y` will be high to low typically because origin = upper left corner
-                    # Aimee(TODO): Check the assumpation (origin = upper left corner)
+                    # Aimee(TODO): Check the assumption (origin = upper left corner)
                     ds = xds.sel(x=slice(bounds[0], bounds[2]), y=slice(bounds[3], bounds[1]))
                 else:
                     # create a dataset from multiple COGs
