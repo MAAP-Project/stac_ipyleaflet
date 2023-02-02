@@ -1,12 +1,11 @@
 """Main module."""
 import csv
 from io import BytesIO
-import json
-import os
 import re
 import requests
 
 from ipyleaflet import Map, DrawControl, WidgetControl, TileLayer, Popup
+from .stac_discovery.stac_widget import StacDiscoveryWidget
 from IPython.display import display
 import ipywidgets
 from ipywidgets import HTML
@@ -66,6 +65,13 @@ class StacIpyleaflet(Map):
             layers_widget.layout.display = 'block'
         elif layers_widget.layout.display == 'block':
             layers_widget.layout.display = 'none'
+    
+    def stac_widget_display(self, b):
+        stac_widget = self.stac_widget
+        if stac_widget.layout.display == 'none':
+            stac_widget.layout.display = 'block'
+        elif stac_widget.layout.display == 'block':
+            stac_widget.layout.display = 'none'
 
     def add_layers_widget(self):
         # Adds a list of layers to toggle on and off via checkboxes
@@ -90,8 +96,16 @@ class StacIpyleaflet(Map):
     def add_toolbar(self):
         # Add a widget for the layers
         self.layers_widget = self.add_layers_widget()
+        self.stac_widget = StacDiscoveryWidget.template(self)
 
         # Add a button to toggle the layers checkbox widget on and off
+        stac_widget_button = ipywidgets.Button(
+            tooltip="STAC Discovery",
+            icon="stack-exchange",
+            layout=ipywidgets.Layout(height="28px", width="38px"),
+        )
+        stac_widget_button.on_click(self.stac_widget_display)
+
         layers_button = ipywidgets.Button(
             tooltip="Open Layers List",
             icon="map-o",
@@ -110,6 +124,10 @@ class StacIpyleaflet(Map):
         toolbar_widget.children = [layers_button, hist_button, self.layers_widget]
         toolbar_control = WidgetControl(widget=toolbar_widget, position="topright")
         self.add(toolbar_control)
+
+        stac_widget = ipywidgets.VBox()
+        stac_widget.children = [stac_widget_button, self.stac_widget]
+        self.add(WidgetControl(widget=stac_widget, position="topright"))
 
     def add_biomass_layers(self):
         biomass_file = 'biomass-layers.csv'
