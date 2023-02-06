@@ -291,18 +291,6 @@ class StacDiscoveryWidget():
 
         items.observe(items_changed, names="value")
 
-        # def checkbox_changed(change):
-        #     if change["new"]:
-        #         params_widget.children = [
-        #             layer_name,
-        #             HBox([vmin, vmax, nodata]),
-        #             add_params,
-        #         ]
-        #     else:
-        #         params_widget.children = []
-
-        # checkbox.observe(checkbox_changed, names="value")
-
         def reset_values():
             collection.value = default["id"]
             collection_description.value = default["description"]
@@ -339,6 +327,7 @@ class StacDiscoveryWidget():
                             max_items=20,
                             intersects=geometries[0],
                             datetime=_datetime,
+                            titiler_endpoint=self.titiler_endpoint,
                             get_info=True,
                         )
                         stac_data.clear()
@@ -387,6 +376,7 @@ class StacDiscoveryWidget():
                                 item=items.value,
                                 assets=assets,
                                 name=layer_name.value,
+                                titiler_endpoint=self.titiler_endpoint,
                                 **vis_params,
                             )
                             self.stac_data = stac_data[0][items.value]
