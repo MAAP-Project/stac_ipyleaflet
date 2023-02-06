@@ -172,7 +172,7 @@ class StacDiscoveryWidget():
         )
         # TODO: Add STAC layers to LayerGroup instead of base
         # TODO: Add LayerGroup control to utilize STAC LayerGroup
-        # TODO: Add back in Checkbox for layer name and additional visual paramaeters
+        # TODO: Add back in Checkbox for layer name and additional visual parameters
         # checkbox = Checkbox(
         #     value=False,
         #     description="Additional params",

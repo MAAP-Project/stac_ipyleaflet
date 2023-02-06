@@ -4,7 +4,7 @@ from io import BytesIO
 import re
 import requests
 
-from ipyleaflet import Map, DrawControl, WidgetControl, TileLayer, Popup, LayersControl
+from ipyleaflet import Map, DrawControl, WidgetControl, TileLayer, Popup
 from .stac_discovery.stac_widget import StacDiscoveryWidget
 from IPython.display import display
 import ipywidgets

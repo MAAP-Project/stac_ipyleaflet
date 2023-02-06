@@ -11,18 +11,7 @@ class Stac():
         Returns:
             object: A titiler endpoint.
         """
-        # if titiler_endpoint is None:
-        #     if os.environ.get("TITILER_ENDPOINT") is not None:
-        #         titiler_endpoint = os.environ.get("TITILER_ENDPOINT")
-
-        #         if titiler_endpoint == "planetary-computer":
-        #             titiler_endpoint = PlanetaryComputerEndpoint()
-        #     else:
-        #         titiler_endpoint = "https://titiler.xyz"
-        # elif titiler_endpoint in ["planetary-computer", "pc"]:
-        #     titiler_endpoint = PlanetaryComputerEndpoint()
-
-        return "https://titiler.xyz" # CHANGED
+        return "https://titiler.xyz"
 
     def stac_bands(url=None, collection=None, item=None, titiler_endpoint=None, **kwargs):
         """Get band names of a single SpatialTemporal Asset Catalog (STAC) item.
@@ -66,12 +55,12 @@ class Stac():
     ):
         """Get a tile layer from a single SpatialTemporal Asset Catalog (STAC) item.
         Args:
-            url (str): HTTP URL to a STAC item, e.g., https://canada-spot-ortho.s3.amazonaws.com/canada_spot_orthoimages/canada_spot5_orthoimages/S5_2007/S5_11055_6057_20070622/S5_11055_6057_20070622.json
-            collection (str): The Microsoft Planetary Computer STAC collection ID, e.g., landsat-8-c2-l2.
-            item (str): The Microsoft Planetary Computer STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
-            assets (str | list): The Microsoft Planetary Computer STAC asset ID, e.g., ["SR_B7", "SR_B5", "SR_B4"].
+            url (str): HTTP URL to a STAC item
+            collection (str): STAC collection ID, e.g., landsat-8-c2-l2.
+            item (str): STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
+            assets (str | list): STAC asset ID, e.g., ["SR_B7", "SR_B5", "SR_B4"].
             bands (list): A list of band names, e.g., ["SR_B7", "SR_B5", "SR_B4"]
-            titiler_endpoint (str, optional): Titiler endpoint, e.g., "https://titiler.xyz", "https://planetarycomputer.microsoft.com/api/data/v1", "planetary-computer", "pc". Defaults to None.
+            titiler_endpoint (str, optional): Titiler endpoint, e.g., "https://titiler.xyz", Defaults to None.
         Returns:
             str: Returns the STAC Tile layer URL.
         """
@@ -126,10 +115,10 @@ class Stac():
     def stac_bounds(url=None, collection=None, item=None, titiler_endpoint=None, **kwargs):
         """Get the bounding box of a single SpatialTemporal Asset Catalog (STAC) item.
         Args:
-            url (str): HTTP URL to a STAC item, e.g., https://canada-spot-ortho.s3.amazonaws.com/canada_spot_orthoimages/canada_spot5_orthoimages/S5_2007/S5_11055_6057_20070622/S5_11055_6057_20070622.json
-            collection (str): The Microsoft Planetary Computer STAC collection ID, e.g., landsat-8-c2-l2.
-            item (str): The Microsoft Planetary Computer STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
-            titiler_endpoint (str, optional): Titiler endpoint, e.g., "https://titiler.xyz", "planetary-computer", "pc". Defaults to None.
+            url (str): HTTP URL to a STAC item
+            collection (str): STAC collection ID, e.g., landsat-8-c2-l2.
+            item (str): STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
+            titiler_endpoint (str, optional): Titiler endpoint, e.g., "https://titiler.xyz", Defaults to None.
         Returns:
             list: A list of values representing [left, bottom, right, top]
         """
@@ -171,12 +160,12 @@ class Stac():
     ):
         """Adds a STAC TileLayer to the map.
         Args:
-            url (str): HTTP URL to a STAC item, e.g., https://canada-spot-ortho.s3.amazonaws.com/canada_spot_orthoimages/canada_spot5_orthoimages/S5_2007/S5_11055_6057_20070622/S5_11055_6057_20070622.json
-            collection (str): The Microsoft Planetary Computer STAC collection ID, e.g., landsat-8-c2-l2.
-            item (str): The Microsoft Planetary Computer STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
-            assets (str | list): The Microsoft Planetary Computer STAC asset ID, e.g., ["SR_B7", "SR_B5", "SR_B4"].
+            url (str): HTTP URL to a STAC item
+            collection (str): STAC collection ID, e.g., landsat-8-c2-l2.
+            item (str): STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
+            assets (str | list): STAC asset ID, e.g., ["SR_B7", "SR_B5", "SR_B4"].
             bands (list): A list of band names, e.g., ["SR_B7", "SR_B5", "SR_B4"]
-            titiler_endpoint (str, optional): Titiler endpoint, e.g., "https://titiler.xyz", "https://planetarycomputer.microsoft.com/api/data/v1", "planetary-computer", "pc". Defaults to None.
+            titiler_endpoint (str, optional): Titiler endpoint, e.g., "https://titiler.xyz", Defaults to None.
             name (str, optional): The layer name to use for the layer. Defaults to 'STAC Layer'.
             attribution (str, optional): The attribution to use. Defaults to ''.
             opacity (float, optional): The opacity of the layer. Defaults to 1.
