@@ -10,18 +10,15 @@ class Stac():
     def stac_bands(url=None, collection=None, item=None, titiler_endpoint=None, **kwargs):
         """Get band names of a single SpatialTemporal Asset Catalog (STAC) item.
         Args:
-            url (str): HTTP URL to a STAC item, e.g., https://canada-spot-ortho.s3.amazonaws.com/canada_spot_orthoimages/canada_spot5_orthoimages/S5_2007/S5_11055_6057_20070622/S5_11055_6057_20070622.json
-            collection (str): The Microsoft Planetary Computer STAC collection ID, e.g., landsat-8-c2-l2.
-            item (str): The Microsoft Planetary Computer STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
-            titiler_endpoint (str, optional): Titiler endpoint, e.g., "https://titiler.xyz", "planetary-computer", "pc". Defaults to None.
+            url (str): HTTP URL to a STAC item
+            collection (str): STAC collection ID, e.g., landsat-8-c2-l2.
+            item (str): STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
+            titiler_endpoint (str, optional): Titiler endpoint. Defaults to None.
         Returns:
             list: A list of band names
         """
         if url is None and collection is None:
             raise ValueError("Either url or collection must be specified. stac_bands")
-
-        if collection is not None and titiler_endpoint is None:
-            titiler_endpoint = "planetary-computer"
 
         if url is not None:
             kwargs["url"] = url
@@ -53,15 +50,12 @@ class Stac():
             item (str): STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
             assets (str | list): STAC asset ID, e.g., ["SR_B7", "SR_B5", "SR_B4"].
             bands (list): A list of band names, e.g., ["SR_B7", "SR_B5", "SR_B4"]
-            titiler_endpoint (str, optional): Titiler endpoint, e.g., "https://titiler.xyz", Defaults to None.
+            titiler_endpoint (str, optional): Titiler endpoint, Defaults to None.
         Returns:
             str: Returns the STAC Tile layer URL.
         """
         if url is None and collection is None:
             raise ValueError("Either url or collection must be specified. stac_tile")
-
-        if collection is not None and titiler_endpoint is None:
-            titiler_endpoint = "planetary-computer"
 
         kwargs["rescale"] = "0,50"
 
@@ -109,15 +103,12 @@ class Stac():
             url (str): HTTP URL to a STAC item
             collection (str): STAC collection ID, e.g., landsat-8-c2-l2.
             item (str): STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
-            titiler_endpoint (str, optional): Titiler endpoint, e.g., "https://titiler.xyz", Defaults to None.
+            titiler_endpoint (str, optional): Titiler endpoint, Defaults to None.
         Returns:
             list: A list of values representing [left, bottom, right, top]
         """
         if url is None and collection is None:
-            raise ValueError("Either url or collection must be specified. stac_bounds")
-
-        if collection is not None and titiler_endpoint is None:
-            titiler_endpoint = "planetary-computer"
+            raise ValueError("Either url or collection must be specified.")
 
         if url is not None:
             kwargs["url"] = url
@@ -155,7 +146,7 @@ class Stac():
             item (str): STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
             assets (str | list): STAC asset ID, e.g., ["SR_B7", "SR_B5", "SR_B4"].
             bands (list): A list of band names, e.g., ["SR_B7", "SR_B5", "SR_B4"]
-            titiler_endpoint (str, optional): Titiler endpoint, e.g., "https://titiler.xyz", Defaults to None.
+            titiler_endpoint (str, optional): Titiler endpoint, Defaults to None.
             name (str, optional): The layer name to use for the layer. Defaults to 'STAC Layer'.
             attribution (str, optional): The attribution to use. Defaults to ''.
             opacity (float, optional): The opacity of the layer. Defaults to 1.
@@ -167,7 +158,6 @@ class Stac():
         bounds = Stac.stac_bounds(url, collection, item, titiler_endpoint)
         self.add_tile_layer(tile_url, name, attribution, opacity, shown)
         self.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
-        # arc_zoom_to_extent(bounds[0], bounds[1], bounds[2], bounds[3])
 
         if not hasattr(self, "cog_layer_dict"):
             self.cog_layer_dict = {}
@@ -189,7 +179,7 @@ class Stac():
 
     def set_default_bands(bands):
         if len(bands) == 0:
-            return [None, None, None]
+            return [None]
 
         if isinstance(bands, str):
             bands = [bands]
@@ -200,24 +190,12 @@ class Stac():
         if not isinstance(bands, list):
             raise ValueError("bands must be a list or a string.")
 
-        if (set(['nir', 'red', 'green']) <= set(bands)):
-            return ['nir', 'red', 'green']
-        elif (set(['red', 'green', 'blue']) <= set(bands)):
-            return ['red', 'green', 'blue']
-        elif (set(["B3", "B2", "B1"]) <= set(bands)):
-            return ["B3", "B2", "B1"]
-        elif len(bands) < 3:
-            return bands[0] * 3
-        else:
-            return bands[:3]
-
     def stac_search(
         url,
         method="GET",
         max_items=None,
         limit=100,
         ids=None,
-        # collections=None,
         bbox=None,
         intersects=None,
         datetime=None,

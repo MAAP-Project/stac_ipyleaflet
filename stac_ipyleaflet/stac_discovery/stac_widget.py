@@ -23,7 +23,7 @@ class StacDiscoveryWidget():
 
         nasa_cmr_path = Path("stac_ipyleaflet/stac_discovery/catalogs/nasa_maap_stac.tsv")
         stac_info = {
-            "NASA Multi-Mission Algorithm and Application Platform STAC": {
+            "MAAP STAC": {
                 "filename": nasa_cmr_path,
                 "name": "id",
                 "url": "href",
@@ -36,7 +36,7 @@ class StacDiscoveryWidget():
         # Template
         catalogs = Dropdown(
             options=connections,
-            value="NASA Multi-Mission Algorithm and Application Platform STAC",
+            value="MAAP STAC",
             description="Catalog:",
             style=style,
             layout=Layout(width="450px", padding=padding),
@@ -93,7 +93,7 @@ class StacDiscoveryWidget():
             style=style,
             layout=Layout(width="454px", padding=padding),
         )
-        band_names = ["red", "green", "blue"]
+
         band_width = "125px"
         singular_band = Dropdown(
             description="Band:",
@@ -101,30 +101,7 @@ class StacDiscoveryWidget():
             style=style,
             layout=Layout(width=band_width, padding=padding),
         )
-        red = Dropdown(
-            options=band_names,
-            value="red",
-            description="Red:",
-            tooltip="Select a band for the red channel",
-            style=style,
-            layout=Layout(width=band_width, padding=padding),
-        )
-        green = Dropdown(
-            options=band_names,
-            value="green",
-            description="Green:",
-            tooltip="Select a band for the green channel",
-            style=style,
-            layout=Layout(width="148px", padding=padding),
-        )
-        blue = Dropdown(
-            options=band_names,
-            value="blue",
-            description="Blue:",
-            tooltip="Select a band for the blue channel",
-            style=style,
-            layout=Layout(width=band_width, padding=padding),
-        )
+
         vmin = Text(
             value=None,
             description="vmin:",
@@ -247,30 +224,13 @@ class StacDiscoveryWidget():
                     # params_widget,
                 ]
                 singular_band.options = bands
-            elif len(bands) > 1:
-                raster_options.children = [
-                    HBox([red, green, blue]),
-                    # HBox([checkbox]),
-                    # params_widget,
-                ]
-                red.options = bands
-                green.options = bands
-                blue.options = bands
             else:
                 raster_options.children = []
 
             default_bands = Stac.set_default_bands(bands)
             try:
-                if len(default_bands) == 1:
-                    singular_band.value = default_bands[0]
-                else:
-                    red.value = default_bands[0]
-                    green.value = default_bands[1]
-                    blue.value = default_bands[2]
+                singular_band.value = default_bands[0]
             except Exception as e:
-                red.value = None
-                green.value = None
-                blue.value = None
                 singular_band.value = None
 
     
@@ -282,12 +242,8 @@ class StacDiscoveryWidget():
                 if not singular_band.options:
                     with output:
                         print("This item cannot be added as a layer. Only cloud-optimized geotiffs are supported at this time.")
-                if collection.value == "Sentinel-2 Cloud-Optimized GeoTIFFs":
-                    vmin.value = "0"
-                    vmax.value = "3000"
-                else:
-                    vmin.value = ""
-                    vmax.value = ""
+                vmin.value = ""
+                vmax.value = ""
 
         items.observe(items_changed, names="value")
 
@@ -367,7 +323,7 @@ class StacDiscoveryWidget():
                         if singular_band.options:
                             assets = singular_band.value
                         else:
-                            assets = f"{red.value},{green.value},{blue.value}"
+                            assets = ""
                         try:
                             Stac.add_stac_layer(
                                 self,
