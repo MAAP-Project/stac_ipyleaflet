@@ -4,7 +4,7 @@ from io import BytesIO
 import re
 import requests
 
-from ipyleaflet import Map, DrawControl, WidgetControl, TileLayer, Popup
+from ipyleaflet import Map, DrawControl, WidgetControl, TileLayer, Popup, LayersControl
 from .stac_discovery.stac_widget import StacDiscoveryWidget
 from IPython.display import display
 import ipywidgets
@@ -138,6 +138,56 @@ class StacIpyleaflet(Map):
                 name, tile_url = row[0], row[1]
                 tile_layer = TileLayer(url=tile_url, attribution=name, name=name, visible=False)
                 self.add_layer(tile_layer)
+
+    def find_layer(self, name: str):
+        layers = self.layers
+
+        for layer in layers:
+            if layer.name == name:
+                return layer
+        return None
+
+    def add_layer(self, layer):
+        existing_layer = self.find_layer(layer.name)
+        if existing_layer is not None:
+            self.remove_layer(existing_layer)
+        super().add_layer(layer)
+
+    def add_tile_layer(
+        self,
+        url,
+        name,
+        attribution,
+        opacity=1.0,
+        shown=True,
+        **kwargs,
+    ):
+        """Adds a TileLayer to the map.
+        Args:
+            url (str): The URL of the tile layer.
+            name (str): The layer name to use for the layer.
+            attribution (str): The attribution to use.
+            opacity (float, optional): The opacity of the layer. Defaults to 1.
+            shown (bool, optional): A flag indicating whether the layer should be on by default. Defaults to True.
+        """
+        if "max_zoom" not in kwargs:
+            kwargs["max_zoom"] = 100
+        if "max_native_zoom" not in kwargs:
+            kwargs["max_native_zoom"] = 100
+        try:
+            tile_layer = TileLayer(
+                url=url,
+                name=name,
+                attribution=attribution,
+                opacity=opacity,
+                visible=shown,
+                **kwargs,
+            )
+            self.add_layer(tile_layer)
+
+        except Exception as e:
+            print("Failed to add the specified TileLayer.")
+            raise Exception(e)
 
     def gen_mosaic_dataset_reader(self, assets, bounds):
         # see https://github.com/cogeotiff/rio-tiler/blob/main/rio_tiler/io/rasterio.py#L368-L380

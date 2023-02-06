@@ -4,12 +4,11 @@ import ipyevents
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from shapely.geometry import Polygon
 from .stac import Stac
 
 class StacDiscoveryWidget():
     def template(self) -> VBox():
-        standard_width = "450px"
+        standard_width = "400px"
         padding = "0px 0px 0px 5px"
         style = {"description_width": "initial"}
         output = Output(
@@ -148,30 +147,47 @@ class StacDiscoveryWidget():
             layout=Layout(width="150px", padding=padding),
         )
 
-        # palette_options = list_palettes(lowercase=True)
-        # palette = Dropdown(
-        #     options=palette_options,
-        #     value=None,
-        #     description="palette:",
-        #     layout=Layout(width="300px", padding=padding),
+        def list_palettes(add_extra=False, lowercase=False):
+            """List all available colormaps. See a complete lost of colormaps at https://matplotlib.org/stable/tutorials/colors/colormaps.html.
+            Returns:
+                list: The list of colormap names.
+            """
+            import matplotlib.pyplot as plt
+
+            result = plt.colormaps()
+            if add_extra:
+                result += ["dem", "ndvi", "ndwi"]
+            if lowercase:
+                result = [i.lower() for i in result]
+            result.sort()
+            return result
+
+        palette_options = list_palettes(lowercase=True)
+        palette = Dropdown(
+            options=palette_options,
+            value=None,
+            description="palette:",
+            layout=Layout(width="300px", padding=padding),
+            style=style,
+        )
+        # TODO: Add STAC layers to LayerGroup instead of base
+        # TODO: Add LayerGroup control to utilize STAC LayerGroup
+        # TODO: Add back in Checkbox for layer name and additional visual paramaeters
+        # checkbox = Checkbox(
+        #     value=False,
+        #     description="Additional params",
+        #     indent=False,
+        #     layout=Layout(width="154px", padding=padding),
         #     style=style,
         # )
-
-        checkbox = Checkbox(
-            value=False,
-            description="Additional params",
-            indent=False,
-            layout=Layout(width="154px", padding=padding),
-            style=style,
-        )
-        add_params_text = "Additional parameters in the format of a dictionary, for example, \n {'palette': ['#006633', '#E5FFCC', '#662A00', '#D8D8D8', '#F5F5F5'], 'expression': '(SR_B5-SR_B4)/(SR_B5+SR_B4)'}"
-        add_params = Textarea(
-            value="",
-            placeholder=add_params_text,
-            layout=Layout(width="450px", padding=padding),
-            style=style,
-        )
-        params_widget = VBox()
+        # add_params_text = "Additional parameters in the format of a dictionary, for example, \n {'palette': ['#006633', '#E5FFCC', '#662A00', '#D8D8D8', '#F5F5F5'], 'expression': '(SR_B5-SR_B4)/(SR_B5+SR_B4)'}"
+        # add_params = Textarea(
+        #     value="",
+        #     placeholder=add_params_text,
+        #     layout=Layout(width="450px", padding=padding),
+        #     style=style,
+        # )
+        # params_widget = VBox()
         raster_options = VBox()
         buttons = ToggleButtons(
             value=None,
@@ -206,6 +222,7 @@ class StacDiscoveryWidget():
 
         def collection_changed(change):
             if change["new"]:
+                output.clear_output()
                 df = pd.read_csv(stac_info[catalogs.value]["filename"], sep="\t")
                 df = df[df[stac_info[catalogs.value]["name"]] == collection.value]
                 collection_description.value = df[stac_info[catalogs.value]["description"]].tolist()[0]
@@ -220,58 +237,71 @@ class StacDiscoveryWidget():
         collection.observe(collection_changed, names="value")
 
         def update_bands():
-            print(stac_data)
-            if len(stac_data) > 0:
-                bands = stac_data[0][items.value]["bands"]
-            else:
-                bands = []
-            print(bands)
+            assets = stac_data[0][items.value]["assets"]
+            bands = [x for x in assets if assets[x].media_type and ("cloud-optimized" in assets[x].media_type)]
+
             if len(bands) == 1:
-                raster_bands = HBox([singular_band])
+                raster_options.children = [
+                    HBox([singular_band]),
+                    HBox([palette]), # checkbox
+                    # params_widget,
+                ]
+                singular_band.options = bands
+            elif len(bands) > 1:
+                raster_options.children = [
+                    HBox([red, green, blue]),
+                    # HBox([checkbox]),
+                    # params_widget,
+                ]
+                red.options = bands
+                green.options = bands
+                blue.options = bands
             else:
-                raster_bands = HBox([red, green, blue])
+                raster_options.children = []
 
-            raster_options.children = [
-                HBox([raster_bands]),
-                HBox([checkbox]), # palette
-                params_widget,
-            ]
+            default_bands = Stac.set_default_bands(bands)
+            try:
+                if len(default_bands) == 1:
+                    singular_band.value = default_bands[0]
+                else:
+                    red.value = default_bands[0]
+                    green.value = default_bands[1]
+                    blue.value = default_bands[2]
+            except Exception as e:
+                red.value = None
+                green.value = None
+                blue.value = None
+                singular_band.value = None
 
-
-            
-
-            # red.options = bnames
-            # green.options = bnames
-            # blue.options = bnames
-
-            # default_bands = set_default_bands(bnames)
-            # try:
-            #     red.value = default_bands[0]
-            #     green.value = default_bands[1]
-            #     blue.value = default_bands[2]
-            # except Exception as e:
-            #     red.value = None
-            #     green.value = None
-            #     blue.value = None
     
         def items_changed(change):
             if change["new"]:
+                output.clear_output()
+                layer_name.value = items.value
                 update_bands()
-                
+                if not singular_band.options:
+                    with output:
+                        print("This item cannot be added as a layer. Only cloud-optimized geotiffs are supported at this time.")
+                if collection.value == "Sentinel-2 Cloud-Optimized GeoTIFFs":
+                    vmin.value = "0"
+                    vmax.value = "3000"
+                else:
+                    vmin.value = ""
+                    vmax.value = ""
 
         items.observe(items_changed, names="value")
 
-        def checkbox_changed(change):
-            if change["new"]:
-                params_widget.children = [
-                    layer_name,
-                    HBox([vmin, vmax, nodata]),
-                    add_params,
-                ]
-            else:
-                params_widget.children = []
+        # def checkbox_changed(change):
+        #     if change["new"]:
+        #         params_widget.children = [
+        #             layer_name,
+        #             HBox([vmin, vmax, nodata]),
+        #             add_params,
+        #         ]
+        #     else:
+        #         params_widget.children = []
 
-        checkbox.observe(checkbox_changed, names="value")
+        # checkbox.observe(checkbox_changed, names="value")
 
         def reset_values():
             collection.value = default["id"]
@@ -279,6 +309,7 @@ class StacDiscoveryWidget():
             collection_url.value = default["href"]
             start_date.value = datetime.strptime(default["start_date"], "%Y-%m-%d")
             end_date.value = datetime.strptime(default["end_date"], "%Y-%m-%d")
+            palette.value = None
             items.options = []
             raster_options.children = []
 
@@ -310,18 +341,16 @@ class StacDiscoveryWidget():
                             datetime=_datetime,
                             get_info=True,
                         )
+                        stac_data.clear()
+                        stac_data.append(search)
+
+                        output.clear_output()
+
                         items.options = list(search.keys())
                         items.value = list(search.keys())[0]
 
-                        stac_data.clear()
-                        stac_data.append(search)
-                        update_bands()
-                        output.clear_output()
-
                     except Exception as e:
                         print(e)
-                    if geometries == None:
-                        print("Requires drawn shape on map")
 
             elif change["new"] == "Display":
                 with output:
@@ -335,46 +364,36 @@ class StacDiscoveryWidget():
                         # ):
                         #     vis_params = eval(add_params.value)
                         # else:
-                        #     vis_params = {}
+                        vis_params = {}
 
-                        # if (
-                        #     palette.value
-                        #     and len(set([red.value, green.value, blue.value])) == 1
-                        # ) or (palette.value and "expression" in vis_params):
-                        #     vis_params["colormap_name"] = palette.value
-                        # elif (
-                        #     palette.value
-                        #     and len(set([red.value, green.value, blue.value])) > 1
-                        #     and "expression" not in vis_params
-                        # ):
-                        #     palette.value = None
-                        #     print("Palette can only be set for single band images.")
+                        if (palette.value and singular_band.options) or (palette.value and "expression" in vis_params):
+                            vis_params["colormap_name"] = palette.value
 
-                        # if vmin.value and vmax.value:
-                        #     vis_params["rescale"] = f"{vmin.value},{vmax.value}"
+                        if vmin.value and vmax.value:
+                            vis_params["rescale"] = f"{vmin.value},{vmax.value}"
 
-                        # if nodata.value:
-                        #     vis_params["nodata"] = nodata.value
+                        if nodata.value:
+                            vis_params["nodata"] = nodata.value
 
-                        # col = collection.value.split(" - ")[0]
-                        # if len(set([red.value, green.value, blue.value])) == 1:
-                        #     assets = red.value
-                        # else:
-                        #     assets = f"{red.value},{green.value},{blue.value}"
+                        if singular_band.options:
+                            assets = singular_band.value
+                        else:
+                            assets = f"{red.value},{green.value},{blue.value}"
+                        try:
+                            Stac.add_stac_layer(
+                                self,
+                                url=stac_data[0][items.value]["href"],
+                                collection=collection.value,
+                                item=items.value,
+                                assets=assets,
+                                name=layer_name.value,
+                                **vis_params,
+                            )
+                            self.stac_data = stac_data[0][items.value]
+                            output.clear_output()
+                        except Exception as e:
+                            print(e)
 
-                        # try:
-
-                        #     self.add_stac_layer(
-                        #         url=stac_data[0][item.value]["href"],
-                        #         item=item.value,
-                        #         assets=assets,
-                        #         name=layer_name.value,
-                        #         **vis_params,
-                        #     )
-                        #     self.stac_data = stac_data[0][item.value]
-                            # output.clear_output()
-                        # except Exception as e:
-                        #     print(e)
 
             elif change["new"] == "Reset":
                 reset_values()
