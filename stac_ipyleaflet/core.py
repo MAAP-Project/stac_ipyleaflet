@@ -29,6 +29,8 @@ class StacIpyleaflet(Map):
     titiler_url: str = "https://titiler.maap-project.org"
     histogram_layer: Popup
     warning_layer: Popup = None 
+    spinner_widget: ipywidgets.IntProgress 
+    spinner_widget_control: WidgetControl
 
     def __init__(self, **kwargs):
         if "center" not in kwargs:
@@ -58,6 +60,18 @@ class StacIpyleaflet(Map):
         }
         self.add_control(draw_control)
         self.draw_control = draw_control
+
+        self.spinner_widget = ipywidgets.IntProgress(
+                value=1,
+                min=0,
+                max=10,
+                description='Loading:',
+                bar_style='', # 'success', 'info', 'warning', 'danger' or ''
+                style={'bar_color': 'maroon'},
+                orientation='horizontal'
+        )
+        self.spinner_widget_control= WidgetControl(widget=self.spinner_widget, position="topleft")
+
         return None
 
     def layers_button_clicked(self, b):
@@ -213,6 +227,7 @@ class StacIpyleaflet(Map):
                 if self.warning_layer:
                     self.remove_layer(self.warning_layer)
                 
+                self.zoom = 2 
                 warning_msg = HTML()
                 warning_msg.value="<b>No data selected!</b>"
                 popup_warning = Popup(location=[20, 0], draggable=True, child=warning_msg)
@@ -221,6 +236,7 @@ class StacIpyleaflet(Map):
                 display()
                 return
         else:
+            self.add(self.spinner_widget_control)
             for idx, dataset in enumerate(self.selected_data):
                 axes = fig.add_subplot(int(f"22{idx+1}"))
                 plot_args['ax'] = axes
@@ -230,9 +246,13 @@ class StacIpyleaflet(Map):
                     dataset.plot.hist(**plot_args)
                     axes.set_title(dataset.attrs['title'])
                     display(fig)
+
+            self.spinner_widget.value=7   
+
         hist_widget.children = [out]
         histogram_layer = Popup(child=hist_widget, location=self.center, min_width=500, min_height=300)
-        self.hisogram_layer = histogram_layer
+        self.histogram_layer = histogram_layer
+        self.remove(self.spinner_widget_control) #remove loading spinner 
         self.add_layer(histogram_layer)
         return None
 
