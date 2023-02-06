@@ -25,7 +25,8 @@ class StacIpyleaflet(Map):
     Stac ipyleaflet is an extension to ipyleaflet `Map`.
     """
     draw_control: DrawControl
-    titiler_url: str = "https://titiler.maap-project.org"
+    # TODO(aimee): right now this is specific to MAAP but we should make it generic.
+    titiler_endpoint: str = "https://titiler.maap-project.org"
     histogram_layer: Popup
     warning_layer: Popup = None 
 
@@ -216,12 +217,12 @@ class StacIpyleaflet(Map):
         datasets = []
         for asset in assets:
             # get fill value
-            asset_endpoint = f"{self.titiler_url}/cog/info?url={asset}"
+            asset_endpoint = f"{self.titiler_endpoint}/cog/info?url={asset}"
             res = requests.get(asset_endpoint)
             no_data = res.json()['nodata_value']
             
             # TODO(aimee): make max_size configurable
-            crop_endpoint = f"{self.titiler_url}/cog/crop/{str_bounds}.npy?url={asset}&max_size=512"  # Same here you can either use max_size or width & height
+            crop_endpoint = f"{self.titiler_endpoint}/cog/crop/{str_bounds}.npy?url={asset}&max_size=512"  # Same here you can either use max_size or width & height
             res = requests.get(crop_endpoint)
             arr = numpy.load(BytesIO(res.content))
             tile, mask = arr[0:-1], arr[-1]
@@ -244,22 +245,25 @@ class StacIpyleaflet(Map):
             for idx, layer in enumerate(visible_layers):
                 layer_url = layer.url
                 title = layer.name.replace('_', ' ').upper()  
-                match = re.search('url=(.+.tif)', layer_url) 
+                match = re.search('url=(.+.tif)', layer_url)
                 if match and match.group(1):
                     s3_url = match.group(1)
                     xds = rioxarray.open_rasterio(s3_url)
                     ds = xds.sel(x=slice(bounds[0], bounds[2]), y=slice(bounds[3], bounds[1]))
                 else:
-                    match = re.search('(https://.+)/tiles', layer_url)
+                    match = re.search(f"({self.titiler_endpoint}/mosaicjson/mosaics/.+)/tiles", layer_url)
                     if match:
                         mosaic_url = match.groups()[0]
                         str_bounds = f"{bounds[0]},{bounds[1]},{bounds[2]},{bounds[3]}"
-                        assets_endpoint = f"{self.titiler_url}/mosaicjson/{str_bounds}/assets?url={mosaic_url}/mosaicjson"
+                        assets_endpoint = f"{self.titiler_endpoint}/mosaicjson/{str_bounds}/assets?url={mosaic_url}/mosaicjson"
                         # create a dataset from multiple COGs
                         assets_response = requests.get(assets_endpoint)
                         datasets = []
                         assets = assets_response.json()
                         ds = self.gen_mosaic_dataset_reader(assets, bounds)
+                    else:
+                        ds = None
+            if ds:
                 ds.attrs["title"] = title
                 self.selected_data.append(ds)
         return self.selected_data
@@ -277,13 +281,14 @@ class StacIpyleaflet(Map):
         self.update_selected_data()
         if len(self.selected_data) == 0:
             with out:
-                print("No data selected")
+                msg = "No data selected or layer method not implemented."
+                print(msg)
                 if self.warning_layer:
                     self.remove_layer(self.warning_layer)
                 
                 warning_msg = HTML()
-                warning_msg.value="<b>No data selected!</b>"
-                popup_warning = Popup(location=[20, 0], draggable=True, child=warning_msg)
+                warning_msg.value=msg
+                popup_warning = Popup(location=self.center, draggable=True, child=warning_msg)
                 self.warning_layer=popup_warning
                 self.add_layer(popup_warning);
                 display()

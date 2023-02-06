@@ -6,12 +6,6 @@ import pystac
 import requests
 
 class Stac():
-    def check_titiler_endpoint(titiler_endpoint=None):
-        """Returns the default titiler endpoint.
-        Returns:
-            object: A titiler endpoint.
-        """
-        return "https://titiler.xyz"
 
     def stac_bands(url=None, collection=None, item=None, titiler_endpoint=None, **kwargs):
         """Get band names of a single SpatialTemporal Asset Catalog (STAC) item.
@@ -36,7 +30,6 @@ class Stac():
         if item is not None:
             kwargs["item"] = item
 
-        titiler_endpoint = Stac.check_titiler_endpoint(titiler_endpoint)
         if isinstance(titiler_endpoint, str):
             r = requests.get(f"{titiler_endpoint}/stac/assets", params=kwargs).json()
         else:
@@ -89,8 +82,6 @@ class Stac():
         if isinstance(assets, list) and len(set(assets)) == 1:
             assets = assets[0]
 
-        titiler_endpoint = Stac.check_titiler_endpoint(titiler_endpoint)
-
         if isinstance(bands, str):
             bands = bands.split(",")
         if isinstance(assets, str):
@@ -135,7 +126,6 @@ class Stac():
         if item is not None:
             kwargs["item"] = item
 
-        titiler_endpoint = Stac.check_titiler_endpoint(titiler_endpoint)
         if isinstance(titiler_endpoint, str):
             r = requests.get(f"{titiler_endpoint}/stac/bounds", params=kwargs).json()
         else:
@@ -191,7 +181,7 @@ class Stac():
             "item": item,
             "assets": assets,
             "bounds": bounds,
-            "titiler_endpoint": "https://titiler.xyz",
+            "titiler_endpoint": self.titiler_endpoint,
             "type": "STAC",
         }
 
