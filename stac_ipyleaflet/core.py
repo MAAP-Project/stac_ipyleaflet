@@ -61,16 +61,17 @@ class StacIpyleaflet(Map):
         self.add_control(draw_control)
         self.draw_control = draw_control
 
-        self.spinner_widget = ipywidgets.IntProgress(
-                value=1,
-                min=0,
-                max=10,
-                description='Loading:',
-                bar_style='', # 'success', 'info', 'warning', 'danger' or ''
-                style={'bar_color': 'maroon'},
-                orientation='horizontal'
+        f=open("./loading.gif", "rb")
+        gif_widget=ipywidgets.Image(
+            value=f.read(),
+            format='png',
+            width=400,
+            height=400,
         )
-        self.spinner_widget_control= WidgetControl(widget=self.spinner_widget, position="topleft")
+
+        loading_widget=ipywidgets.VBox()
+        loading_widget.children=[gif_widget]
+        self.loading_widget_layer = Popup(child=loading_widget, location=self.center, min_width=400, min_height=400)
 
         return None
 
@@ -220,7 +221,7 @@ class StacIpyleaflet(Map):
         fig = plt.figure()
         hist_widget = ipywidgets.VBox()
         out = ipywidgets.Output()
-        self.update_selected_data()
+        self.update_selected_data()          
         if len(self.selected_data) == 0:
             with out:
                 print("No data selected")
@@ -236,7 +237,7 @@ class StacIpyleaflet(Map):
                 display()
                 return
         else:
-            self.add(self.spinner_widget_control)
+            self.add_layer(self.loading_widget_layer)
             for idx, dataset in enumerate(self.selected_data):
                 axes = fig.add_subplot(int(f"22{idx+1}"))
                 plot_args['ax'] = axes
@@ -252,7 +253,7 @@ class StacIpyleaflet(Map):
         hist_widget.children = [out]
         histogram_layer = Popup(child=hist_widget, location=self.center, min_width=500, min_height=300)
         self.histogram_layer = histogram_layer
-        self.remove(self.spinner_widget_control) #remove loading spinner 
+        self.remove_layer(self.loading_widget_layer)
         self.add_layer(histogram_layer)
         return None
 
