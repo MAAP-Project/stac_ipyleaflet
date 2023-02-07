@@ -29,8 +29,7 @@ class StacIpyleaflet(Map):
     titiler_url: str = "https://titiler.maap-project.org"
     histogram_layer: Popup
     warning_layer: Popup = None 
-    spinner_widget: ipywidgets.IntProgress 
-    spinner_widget_control: WidgetControl
+    loading_widget_layer: Popup = None 
 
     def __init__(self, **kwargs):
         if "center" not in kwargs:
@@ -247,8 +246,6 @@ class StacIpyleaflet(Map):
                     dataset.plot.hist(**plot_args)
                     axes.set_title(dataset.attrs['title'])
                     display(fig)
-
-            self.spinner_widget.value=7   
 
         hist_widget.children = [out]
         histogram_layer = Popup(child=hist_widget, location=self.center, min_width=500, min_height=300)
