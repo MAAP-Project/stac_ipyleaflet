@@ -253,7 +253,6 @@ class StacIpyleaflet(Map):
 
         hist_widget.children = [out]
         hist_location = self.bbox_centroid or self.center
-        print(hist_location)
         histogram_layer = Popup(child=hist_widget, location=hist_location, min_width=500, min_height=300)
         self.histogram_layer = histogram_layer
         self.remove_layer(self.loading_widget_layer)
