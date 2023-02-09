@@ -71,7 +71,7 @@ class StacIpyleaflet(Map):
 
         loading_widget=ipywidgets.VBox()
         loading_widget.children=[gif_widget]
-        loading_location = self.bbox_centroid #or self.center
+        loading_location = self.bbox_centroid or self.center
         self.loading_widget_layer = Popup(child=loading_widget, min_width=200, min_height=200)
 
         return None
@@ -189,7 +189,7 @@ class StacIpyleaflet(Map):
         if geometries[0]:
             box = Polygon(geometries[0]['coordinates'][0])
             bounds = box.bounds
-            self.bbox_centroid = [box.centroid.x, box.centroid.y]
+            self.bbox_centroid = [box.centroid.y, box.centroid.x]
             for idx, layer in enumerate(visible_layers):
                 layer_url = layer.url
                 title = layer.name.replace('_', ' ').upper()  
@@ -252,7 +252,7 @@ class StacIpyleaflet(Map):
                     display(fig)
 
         hist_widget.children = [out]
-        hist_location = self.bbox_centroid #or self.center
+        hist_location = self.bbox_centroid or self.center
         print(hist_location)
         histogram_layer = Popup(child=hist_widget, location=hist_location, min_width=500, min_height=300)
         self.histogram_layer = histogram_layer
