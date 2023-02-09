@@ -228,6 +228,7 @@ class StacIpyleaflet(Map):
             bounds = box.bounds
             for idx, layer in enumerate(visible_layers):
                 layer_url = layer.url
+                ds = None
                 title = layer.name.replace('_', ' ').upper()  
                 match = re.search('url=(.+.tif)', layer_url)
                 if match and match.group(1):
@@ -250,11 +251,9 @@ class StacIpyleaflet(Map):
                         datasets = []
                         assets = assets_response.json()
                         ds = self.gen_mosaic_dataset_reader(assets, bounds)
-                    else:
-                        ds = None
-            if ds:
-                ds.attrs["title"] = title
-                self.selected_data.append(ds)
+                if ds.any():
+                    ds.attrs["title"] = title
+                    self.selected_data.append(ds)
         return self.selected_data
 
     # TODO(aimee): if you try and create a histogram for more than one layer, it creates duplicates in the popup
