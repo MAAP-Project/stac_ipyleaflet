@@ -193,7 +193,10 @@ class StacIpyleaflet(Map):
 
             if len(visible_layers) !=0:
                 self.loading_widget_layer.location = self.bbox_centroid
-                self.add_layer(self.loading_widget_layer)
+                if self.loading_widget_layer not in self.layers:
+                    self.add_layer(self.loading_widget_layer)
+                else:
+                    self.loading_widget_layer.open_popup()
 
             for idx, layer in enumerate(visible_layers):
                 layer_url = layer.url
@@ -220,7 +223,7 @@ class StacIpyleaflet(Map):
 
     # TODO(aimee): if you try and create a histogram for more than one layer, it creates duplicates in the popup
     def create_histograms(self, b):
-        if self.histogram_layer:
+        if self.histogram_layer in self.layers:
             self.remove_layer(self.histogram_layer)
         # TODO(aimee): make this configurable
         minx, maxx = [0, 500]
@@ -234,8 +237,6 @@ class StacIpyleaflet(Map):
                 print("No data selected")
                 if self.warning_layer:
                     self.remove_layer(self.warning_layer)
-                
-                self.zoom = 2 
                 warning_msg = HTML()
                 warning_msg.value="<b>No data selected!</b>"
                 popup_warning = Popup(location=[20, 0], draggable=True, child=warning_msg)
