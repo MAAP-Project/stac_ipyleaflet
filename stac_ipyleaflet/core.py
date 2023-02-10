@@ -30,6 +30,7 @@ class StacIpyleaflet(Map):
     histogram_layer: Popup
     warning_layer: Popup = None 
     loading_widget_layer: Popup = None 
+    bbox_centroid: list = []
 
     def __init__(self, **kwargs):
         if "center" not in kwargs:
@@ -64,13 +65,14 @@ class StacIpyleaflet(Map):
         gif_widget=ipywidgets.Image(
             value=f.read(),
             format='png',
-            width=400,
-            height=400,
+            width=200,
+            height=200,
         )
 
         loading_widget=ipywidgets.VBox()
         loading_widget.children=[gif_widget]
-        self.loading_widget_layer = Popup(child=loading_widget, location=self.center, min_width=400, min_height=400)
+        loading_location = self.bbox_centroid or self.center
+        self.loading_widget_layer = Popup(child=loading_widget, min_width=200, min_height=200)
 
         return None
 
@@ -187,6 +189,7 @@ class StacIpyleaflet(Map):
         if geometries[0]:
             box = Polygon(geometries[0]['coordinates'][0])
             bounds = box.bounds
+            self.bbox_centroid = [box.centroid.y, box.centroid.x]
             for idx, layer in enumerate(visible_layers):
                 layer_url = layer.url
                 title = layer.name.replace('_', ' ').upper()  
@@ -236,6 +239,7 @@ class StacIpyleaflet(Map):
                 display()
                 return
         else:
+            self.loading_widget_layer.location = self.bbox_centroid
             self.add_layer(self.loading_widget_layer)
             for idx, dataset in enumerate(self.selected_data):
                 axes = fig.add_subplot(int(f"22{idx+1}"))
@@ -248,7 +252,8 @@ class StacIpyleaflet(Map):
                     display(fig)
 
         hist_widget.children = [out]
-        histogram_layer = Popup(child=hist_widget, location=self.center, min_width=500, min_height=300)
+        hist_location = self.bbox_centroid or self.center
+        histogram_layer = Popup(child=hist_widget, location=hist_location, min_width=500, min_height=300)
         self.histogram_layer = histogram_layer
         self.remove_layer(self.loading_widget_layer)
         self.add_layer(histogram_layer)
