@@ -190,6 +190,11 @@ class StacIpyleaflet(Map):
             box = Polygon(geometries[0]['coordinates'][0])
             bounds = box.bounds
             self.bbox_centroid = [box.centroid.y, box.centroid.x]
+
+            if len(visible_layers) !=0:
+                self.loading_widget_layer.location = self.bbox_centroid
+                self.add_layer(self.loading_widget_layer)
+
             for idx, layer in enumerate(visible_layers):
                 layer_url = layer.url
                 title = layer.name.replace('_', ' ').upper()  
@@ -239,8 +244,6 @@ class StacIpyleaflet(Map):
                 display()
                 return
         else:
-            self.loading_widget_layer.location = self.bbox_centroid
-            self.add_layer(self.loading_widget_layer)
             for idx, dataset in enumerate(self.selected_data):
                 axes = fig.add_subplot(int(f"22{idx+1}"))
                 plot_args['ax'] = axes
