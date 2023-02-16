@@ -237,11 +237,7 @@ class StacIpyleaflet(Map):
                 print("No data selected")
                 if self.warning_layer:
                     self.remove_layer(self.warning_layer)
-                warning_msg = HTML()
-                warning_msg.value="<b>No data selected!</b>"
-                popup_warning = Popup(location=[20, 0], draggable=True, child=warning_msg)
-                self.warning_layer=popup_warning
-                self.add_layer(popup_warning);
+                self.gen_popup_icon("No data selected!")
                 display()
                 return
         else:
@@ -251,7 +247,12 @@ class StacIpyleaflet(Map):
                 # create a histogram
                 with out:
                     out.clear_output()
-                    dataset.plot.hist(**plot_args)
+                    try:
+                        dataset.plot.hist(**plot_args)
+                    except Exception as err:
+                        self.remove_layer(self.loading_widget_layer)
+                        self.gen_popup_icon(f"Error: {err}")
+                        return 
                     axes.set_title(dataset.attrs['title'])
                     display(fig)
 
@@ -267,3 +268,11 @@ class StacIpyleaflet(Map):
         self.add_biomass_layers()
         self.add_toolbar()
         return None
+
+    # generates warning/error popup
+    def gen_popup_icon(self, msg):
+        warning_msg = HTML()
+        warning_msg.value=f"<b>{msg}</b>"
+        popup_warning = Popup(location=self.bbox_centroid or self.center, draggable=True, child=warning_msg)
+        self.warning_layer=popup_warning
+        self.add_layer(popup_warning);
