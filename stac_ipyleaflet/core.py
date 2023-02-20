@@ -281,6 +281,14 @@ class StacIpyleaflet(Map):
                     self.selected_data.append(ds)
         return self.selected_data
 
+    def error_message(self, msg):
+        out = ipywidgets.Output()
+        with out:
+            print(msg)
+            self.gen_popup_icon(msg)
+            display()
+            return
+
     # TODO(aimee): if you try and create a histogram for more than one layer, it creates duplicates in the popup
     def create_histograms(self, b):
         if self.histogram_layer in self.layers:
@@ -290,22 +298,18 @@ class StacIpyleaflet(Map):
         plot_args = {"range": (minx, maxx)}
         fig = plt.figure()
         hist_widget = ipywidgets.VBox()
-        out = ipywidgets.Output()
-        self.update_selected_data()          
+        try:
+            self.update_selected_data()
+        except Exception as e:
+            return self.error_message(e)
         if len(self.selected_data) == 0:
-            with out:
-                msg = "No data selected or layer method not implemented."
-                print(msg)
-                if self.warning_layer:
-                    self.remove_layer(self.warning_layer)
-                self.gen_popup_icon("No data selected!")
-                display()
-                return
+            return self.error_message("No data selected or layer method not implemented.")
         else:
             for idx, dataset in enumerate(self.selected_data):
                 axes = fig.add_subplot(int(f"22{idx+1}"))
                 plot_args['ax'] = axes
                 # create a histogram
+                out = ipywidgets.Output()
                 with out:
                     out.clear_output()
                     try:
