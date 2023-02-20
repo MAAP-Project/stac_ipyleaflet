@@ -303,7 +303,7 @@ class StacIpyleaflet(Map):
         except Exception as e:
             return self.error_message(e)
         if len(self.selected_data) == 0:
-            return self.error_message("No data selected or layer method not implemented.")
+            return self.error_message("No data or bounding box selected.")
         else:
             for idx, dataset in enumerate(self.selected_data):
                 axes = fig.add_subplot(int(f"22{idx+1}"))
