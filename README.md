@@ -16,7 +16,7 @@ For demo purposes, `write_biomass_layers.py` creates a CSV file with current map
 ```sh
 conda create -n stac_ipyleaflet python=3.9
 conda activate stac_ipyleaflet
-pip install -r requirements.text
+pip install -r requirements.txt
 python -m ipykernel install --name=stac_ipyleaflet
 export AWS_PROFILE=maap
 jupyter lab

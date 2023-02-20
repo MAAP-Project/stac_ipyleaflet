@@ -29,6 +29,8 @@ class StacIpyleaflet(Map):
     titiler_endpoint: str = "https://titiler.maap-project.org"
     histogram_layer: Popup
     warning_layer: Popup = None 
+    loading_widget_layer: Popup = None 
+    bbox_centroid: list = []
 
     def __init__(self, **kwargs):
         if "center" not in kwargs:
@@ -58,6 +60,20 @@ class StacIpyleaflet(Map):
         }
         self.add_control(draw_control)
         self.draw_control = draw_control
+
+        f=open("./loading.gif", "rb")
+        gif_widget=ipywidgets.Image(
+            value=f.read(),
+            format='png',
+            width=200,
+            height=200,
+        )
+
+        loading_widget=ipywidgets.VBox()
+        loading_widget.children=[gif_widget]
+        loading_location = self.bbox_centroid or self.center
+        self.loading_widget_layer = Popup(child=loading_widget, min_width=200, min_height=200)
+
         return None
 
     def layers_button_clicked(self, b):
@@ -226,6 +242,15 @@ class StacIpyleaflet(Map):
             # https://shapely.readthedocs.io/en/latest/reference/shapely.bounds.html?highlight=bounds#shapely.bounds
             # For geometries these 4 numbers are returned: min x, min y, max x, max y.
             bounds = box.bounds
+            self.bbox_centroid = [box.centroid.y, box.centroid.x]
+
+            if len(visible_layers) !=0:
+                self.loading_widget_layer.location = self.bbox_centroid
+                if self.loading_widget_layer not in self.layers:
+                    self.add_layer(self.loading_widget_layer)
+                else:
+                    self.loading_widget_layer.open_popup()
+
             for idx, layer in enumerate(visible_layers):
                 layer_url = layer.url
                 ds = None
@@ -256,44 +281,51 @@ class StacIpyleaflet(Map):
                     self.selected_data.append(ds)
         return self.selected_data
 
+    def error_message(self, msg):
+        out = ipywidgets.Output()
+        with out:
+            print(msg)
+            self.gen_popup_icon(msg)
+            display()
+            return
+
     # TODO(aimee): if you try and create a histogram for more than one layer, it creates duplicates in the popup
     def create_histograms(self, b):
-        if self.histogram_layer:
+        if self.histogram_layer in self.layers:
             self.remove_layer(self.histogram_layer)
         # TODO(aimee): make this configurable
         minx, maxx = [0, 500]
         plot_args = {"range": (minx, maxx)}
         fig = plt.figure()
         hist_widget = ipywidgets.VBox()
-        out = ipywidgets.Output()
-        self.update_selected_data()
+        try:
+            self.update_selected_data()
+        except Exception as e:
+            return self.error_message(e)
         if len(self.selected_data) == 0:
-            with out:
-                msg = "No data selected or layer method not implemented."
-                print(msg)
-                if self.warning_layer:
-                    self.remove_layer(self.warning_layer)
-                
-                warning_msg = HTML()
-                warning_msg.value=msg
-                popup_warning = Popup(location=self.center, draggable=True, child=warning_msg)
-                self.warning_layer=popup_warning
-                self.add_layer(popup_warning);
-                display()
-                return
+            return self.error_message("No data or bounding box selected.")
         else:
             for idx, dataset in enumerate(self.selected_data):
                 axes = fig.add_subplot(int(f"22{idx+1}"))
                 plot_args['ax'] = axes
                 # create a histogram
+                out = ipywidgets.Output()
                 with out:
                     out.clear_output()
-                    dataset.plot.hist(**plot_args)
+                    try:
+                        dataset.plot.hist(**plot_args)
+                    except Exception as err:
+                        self.remove_layer(self.loading_widget_layer)
+                        self.gen_popup_icon(f"Error: {err}")
+                        return 
                     axes.set_title(dataset.attrs['title'])
                     display(fig)
+
         hist_widget.children = [out]
-        histogram_layer = Popup(child=hist_widget, location=self.center, min_width=500, min_height=300)
-        self.hisogram_layer = histogram_layer
+        hist_location = self.bbox_centroid or self.center
+        histogram_layer = Popup(child=hist_widget, location=hist_location, min_width=500, min_height=300)
+        self.histogram_layer = histogram_layer
+        self.remove_layer(self.loading_widget_layer)
         self.add_layer(histogram_layer)
         return None
 
@@ -301,3 +333,11 @@ class StacIpyleaflet(Map):
         self.add_biomass_layers()
         self.add_toolbar()
         return None
+
+    # generates warning/error popup
+    def gen_popup_icon(self, msg):
+        warning_msg = HTML()
+        warning_msg.value=f"<b>{msg}</b>"
+        popup_warning = Popup(location=self.bbox_centroid or self.center, draggable=True, child=warning_msg)
+        self.warning_layer=popup_warning
+        self.add_layer(popup_warning);
