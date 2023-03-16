@@ -6,9 +6,9 @@ Much of this is inspired and copied from [leafmap](https://leafmap.org/)
 
 ![Jupyter Lab ScreenShot](jlab-screenshot.png)
 
-## Requirements
+## Additional requirements
 
-* python, pip, jupyter lab, virtualenv, node>=12.0.0
+* jupyter lab, node>=12.0.0
 
 ## Setup
 
