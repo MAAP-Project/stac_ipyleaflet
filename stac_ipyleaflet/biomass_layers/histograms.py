@@ -1,34 +1,8 @@
-import csv
 import re
-from io import BytesIO
-
-import numpy
-import numpy.ma as ma
 import requests
 import rioxarray
-import xarray as xr
-from ipywidgets import (
-    Checkbox,
-    DatePicker,
-    Dropdown,
-    HBox,
-    jslink,
-    Layout,
-    Output,
-    Text,
-    Textarea,
-    ToggleButtons,
-    VBox,
-)
-from ipyleaflet import (
-    Popup,
-    display
-)
-from rio_tiler.io import Reader
-from rio_tiler.models import ImageData
-from rio_tiler.mosaic import mosaic_reader
+
 from shapely.geometry import Polygon
-import matplotlib.pyplot as plt
 from ..base_widget import TileLayer
 
 class Histograms():
