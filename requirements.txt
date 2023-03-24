@@ -5,7 +5,7 @@ matplotlib
 pydantic
 shapely
 requests
-rio_tiler
+# rio_tiler
 # rioxarray
-# xarray
+xarray
 pystac_client==0.6.1
