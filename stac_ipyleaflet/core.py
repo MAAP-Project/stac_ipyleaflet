@@ -264,13 +264,13 @@ class StacIpyleaflet(Map):
                     # Aimee(TODO): Check the assumption (origin = upper left corner)
                     ds = xds.sel(x=slice(bounds[0], bounds[2]), y=slice(bounds[3], bounds[1]))
                 else:
-                    match = re.search(f"({self.titiler_endpoint}/mosaicjson/mosaics/.+)/tiles", layer_url)
+                    match = re.search(f"({self.titiler_endpoint}/mosaics/.+)/tiles", layer_url)
                     if match:
                         mosaic_url = match.groups()[0]
                         # From titiler docs http://titiler.maap-project.org/docs
-                        # /mosaicjson/{minx},{miny},{maxx},{maxy}/assets
+                        # /{minx},{miny},{maxx},{maxy}/assets
                         str_bounds = f"{bounds[0]},{bounds[1]},{bounds[2]},{bounds[3]}"
-                        assets_endpoint = f"{self.titiler_endpoint}/mosaicjson/{str_bounds}/assets?url={mosaic_url}/mosaicjson"
+                        assets_endpoint = f"{self.titiler_endpoint}/{str_bounds}/assets?url={mosaic_url}/mosaicjson"
                         # create a dataset from multiple COGs
                         assets_response = requests.get(assets_endpoint)
                         datasets = []
