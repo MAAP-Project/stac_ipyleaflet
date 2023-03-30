@@ -5,6 +5,7 @@ channels:
 dependencies:
     - jupyterlab
     - pip
+    - gdal
     - pip:
         - ipyleaflet==0.17.2
         - ipywidgets==8.0.4
