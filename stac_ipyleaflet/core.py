@@ -27,6 +27,7 @@ class StacIpyleaflet(Map):
     draw_control: DrawControl
     # TODO(aimee): right now this is specific to MAAP but we should make it generic.
     titiler_endpoint: str = "https://titiler.maap-project.org"
+    titiler_stac_endpoint: str = "https://titiler-stac.maap-project.org"
     histogram_layer: Popup
     warning_layer: Popup = None 
     loading_widget_layer: Popup = None 

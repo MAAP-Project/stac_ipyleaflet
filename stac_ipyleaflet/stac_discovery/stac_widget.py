@@ -332,7 +332,7 @@ class StacDiscoveryWidget():
                                 item=items.value,
                                 assets=assets,
                                 name=layer_name.value,
-                                titiler_endpoint=self.titiler_endpoint,
+                                titiler_stac_endpoint=self.titiler_stac_endpoint,
                                 **vis_params,
                             )
                             self.stac_data = stac_data[0][items.value]
