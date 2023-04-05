@@ -17,7 +17,7 @@ def write_biomass_layers():
                 if data['source'].get('tiles'):
                     tile_url = data['source']['tiles'][0]
                     tile_url = tile_url.replace('&color_formula=gamma r {gamma}', '')
-                    tile_url = tile_url.replace('{titiler_server_url}', 'https://titiler.maap-project.org')
+                    tile_url = tile_url.replace('{titiler_server_url}', 'https://titiler-stac.maap-project.org')
                 file_obj.close()
             writer.writerow({
                 fieldnames[0]: data['id'].capitalize().replace('_', ' '), 
