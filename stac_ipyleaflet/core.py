@@ -27,6 +27,7 @@ class StacIpyleaflet(Map):
     draw_control: DrawControl
     # TODO(aimee): right now this is specific to MAAP but we should make it generic.
     titiler_endpoint: str = "https://titiler.maap-project.org"
+    titiler_stac_endpoint: str = "https://titiler-stac.maap-project.org"
     histogram_layer: Popup
     warning_layer: Popup = None 
     loading_widget_layer: Popup = None 
@@ -264,13 +265,14 @@ class StacIpyleaflet(Map):
                     # Aimee(TODO): Check the assumption (origin = upper left corner)
                     ds = xds.sel(x=slice(bounds[0], bounds[2]), y=slice(bounds[3], bounds[1]))
                 else:
-                    match = re.search(f"({self.titiler_endpoint}/mosaicjson/mosaics/.+)/tiles", layer_url)
+                    uuid_pattern = r'([a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12})'
+                    match = re.search(f"({self.titiler_endpoint}/mosaics/{uuid_pattern})/tiles", layer_url)
                     if match:
                         mosaic_url = match.groups()[0]
                         # From titiler docs http://titiler.maap-project.org/docs
-                        # /mosaicjson/{minx},{miny},{maxx},{maxy}/assets
+                        # /{minx},{miny},{maxx},{maxy}/assets
                         str_bounds = f"{bounds[0]},{bounds[1]},{bounds[2]},{bounds[3]}"
-                        assets_endpoint = f"{self.titiler_endpoint}/mosaicjson/{str_bounds}/assets?url={mosaic_url}/mosaicjson"
+                        assets_endpoint = f"{self.titiler_stac_endpoint}/mosaicjson/{str_bounds}/assets?url={mosaic_url}/mosaicjson"
                         # create a dataset from multiple COGs
                         assets_response = requests.get(assets_endpoint)
                         datasets = []

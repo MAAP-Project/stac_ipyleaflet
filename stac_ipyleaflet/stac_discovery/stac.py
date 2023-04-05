@@ -7,13 +7,13 @@ import requests
 
 class Stac():
 
-    def stac_bands(url=None, collection=None, item=None, titiler_endpoint=None, **kwargs):
+    def stac_bands(url=None, collection=None, item=None, titiler_stac_endpoint=None, **kwargs):
         """Get band names of a single SpatialTemporal Asset Catalog (STAC) item.
         Args:
             url (str): HTTP URL to a STAC item
             collection (str): STAC collection ID, e.g., landsat-8-c2-l2.
             item (str): STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
-            titiler_endpoint (str, optional): Titiler endpoint. Defaults to None.
+            titiler_stac_endpoint (str, optional): Titiler endpoint. Defaults to None.
         Returns:
             list: A list of band names
         """
@@ -27,10 +27,10 @@ class Stac():
         if item is not None:
             kwargs["item"] = item
 
-        if isinstance(titiler_endpoint, str):
-            r = requests.get(f"{titiler_endpoint}/stac/assets", params=kwargs).json()
+        if isinstance(titiler_stac_endpoint, str):
+            r = requests.get(f"{titiler_stac_endpoint}/stac/assets", params=kwargs).json()
         else:
-            r = requests.get(titiler_endpoint.url_for_stac_assets(), params=kwargs).json()
+            r = requests.get(titiler_stac_endpoint.url_for_stac_assets(), params=kwargs).json()
 
         return r
 
@@ -40,7 +40,7 @@ class Stac():
         item=None,
         assets=None,
         bands=None,
-        titiler_endpoint=None,
+        titiler_stac_endpoint=None,
         **kwargs,
     ):
         """Get a tile layer from a single SpatialTemporal Asset Catalog (STAC) item.
@@ -50,7 +50,7 @@ class Stac():
             item (str): STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
             assets (str | list): STAC asset ID, e.g., ["SR_B7", "SR_B5", "SR_B4"].
             bands (list): A list of band names, e.g., ["SR_B7", "SR_B5", "SR_B4"]
-            titiler_endpoint (str, optional): Titiler endpoint, Defaults to None.
+            titiler_stac_endpoint (str, optional): Titiler endpoint, Defaults to None.
         Returns:
             str: Returns the STAC Tile layer URL.
         """
@@ -88,22 +88,22 @@ class Stac():
             TileMatrixSetId = kwargs["TileMatrixSetId"]
             kwargs.pop("TileMatrixSetId")
 
-        if isinstance(titiler_endpoint, str):
+        if isinstance(titiler_stac_endpoint, str):
             r = requests.get(
-                f"{titiler_endpoint}/stac/{TileMatrixSetId}/tilejson.json",
+                f"{titiler_stac_endpoint}/stac/{TileMatrixSetId}/tilejson.json",
                 params=kwargs,
             ).json()
         else:
-            r = requests.get(titiler_endpoint.url_for_stac_item(), params=kwargs).json()
+            r = requests.get(titiler_stac_endpoint.url_for_stac_item(), params=kwargs).json()
         return r["tiles"][0]
 
-    def stac_bounds(url=None, collection=None, item=None, titiler_endpoint=None, **kwargs):
+    def stac_bounds(url=None, collection=None, item=None, titiler_stac_endpoint=None, **kwargs):
         """Get the bounding box of a single SpatialTemporal Asset Catalog (STAC) item.
         Args:
             url (str): HTTP URL to a STAC item
             collection (str): STAC collection ID, e.g., landsat-8-c2-l2.
             item (str): STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
-            titiler_endpoint (str, optional): Titiler endpoint, Defaults to None.
+            titiler_stac_endpoint (str, optional): Titiler endpoint, Defaults to None.
         Returns:
             list: A list of values representing [left, bottom, right, top]
         """
@@ -117,10 +117,10 @@ class Stac():
         if item is not None:
             kwargs["item"] = item
 
-        if isinstance(titiler_endpoint, str):
-            r = requests.get(f"{titiler_endpoint}/stac/bounds", params=kwargs).json()
+        if isinstance(titiler_stac_endpoint, str):
+            r = requests.get(f"{titiler_stac_endpoint}/stac/bounds", params=kwargs).json()
         else:
-            r = requests.get(titiler_endpoint.url_for_stac_bounds(), params=kwargs).json()
+            r = requests.get(titiler_stac_endpoint.url_for_stac_bounds(), params=kwargs).json()
 
         bounds = r["bounds"]
         return bounds
@@ -132,7 +132,7 @@ class Stac():
         item=None,
         assets=None,
         bands=None,
-        titiler_endpoint=None,
+        titiler_stac_endpoint=None,
         name="STAC Layer",
         attribution="",
         opacity=1.0,
@@ -146,16 +146,16 @@ class Stac():
             item (str): STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
             assets (str | list): STAC asset ID, e.g., ["SR_B7", "SR_B5", "SR_B4"].
             bands (list): A list of band names, e.g., ["SR_B7", "SR_B5", "SR_B4"]
-            titiler_endpoint (str, optional): Titiler endpoint, Defaults to None.
+            titiler_stac_endpoint (str, optional): Titiler endpoint, Defaults to None.
             name (str, optional): The layer name to use for the layer. Defaults to 'STAC Layer'.
             attribution (str, optional): The attribution to use. Defaults to ''.
             opacity (float, optional): The opacity of the layer. Defaults to 1.
             shown (bool, optional): A flag indicating whether the layer should be on by default. Defaults to True.
         """
         tile_url = Stac.stac_tile(
-            url, collection, item, assets, bands, titiler_endpoint, **kwargs
+            url, collection, item, assets, bands, titiler_stac_endpoint, **kwargs
         )
-        bounds = Stac.stac_bounds(url, collection, item, titiler_endpoint)
+        bounds = Stac.stac_bounds(url, collection, item, titiler_stac_endpoint)
         self.add_tile_layer(tile_url, name, attribution, opacity, shown)
         self.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
 
@@ -171,7 +171,7 @@ class Stac():
             "item": item,
             "assets": assets,
             "bounds": bounds,
-            "titiler_endpoint": self.titiler_endpoint,
+            "titiler_stac_endpoint": self.titiler_stac_endpoint,
             "type": "STAC",
         }
 
