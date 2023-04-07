@@ -5,3 +5,4 @@ dependencies:
     - jupyterlab
     - pip
     - gdal
+    - rasterio>=1.3
