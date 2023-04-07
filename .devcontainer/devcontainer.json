@@ -8,7 +8,7 @@
     },
     "features": {
         "ghcr.io/devcontainers/features/node:1": {}
-    },
+    }
 
     // Features to add to the dev container. More info: https://containers.dev/features.
     // "features": {},
@@ -17,7 +17,8 @@
     // "forwardPorts": [],
 
     // Use 'postCreateCommand' to run commands after the container is created.
-    "postCreateCommand": "pip install -e ."
+    //"postCreateCommand": "pip install -e ."
+    //"postCreateCommand": "conda init bash"
 
     // Configure tool-specific properties.
     // "customizations": {},

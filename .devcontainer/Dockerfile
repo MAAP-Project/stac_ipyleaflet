@@ -8,10 +8,11 @@ RUN if [ -f "/tmp/conda-tmp/environment.yml" ]; then umask 0002 && /opt/conda/bi
     && rm -rf /tmp/conda-tmp
 
 USER vscode
-# COPY requirements.txt /tmp/pip-tmp/
-# RUN pip install -r /tmp/pip-tmp/requirements.txt && rm -rf /tmp/pip-tmp
-# WORKDIR /stac_ipyleaflet
-# RUN pip install -e .
+
+WORKDIR /tmp/stac_ipyleaflet
+COPY . .
+RUN /opt/conda/bin/pip install -e .
+
 
 # [Optional] Uncomment to install a different version of Python than the default
 # RUN conda install -y python=3.6 \
