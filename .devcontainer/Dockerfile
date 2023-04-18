@@ -9,9 +9,9 @@ RUN if [ -f "/tmp/conda-tmp/environment.yml" ]; then umask 0002 && /opt/conda/bi
 
 USER vscode
 
-WORKDIR /tmp/stac_ipyleaflet
-COPY . .
-RUN /opt/conda/bin/pip install -e .
+# WORKDIR /tmp/stac_ipyleaflet
+# COPY . .
+# RUN /opt/conda/bin/pip install -e .
 
 
 # [Optional] Uncomment to install a different version of Python than the default
