@@ -1,0 +1,8 @@
+name: stac_ipyleaflet
+channels:
+    - conda-forge
+dependencies:
+    - jupyterlab
+    - pip
+    - gdal
+    - rasterio>=1.3
