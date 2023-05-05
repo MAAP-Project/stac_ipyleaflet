@@ -1,11 +1,61 @@
 # Code taken from https://github.com/giswqs/leafmap/blob/master/leafmap/stac.py
 
 from pystac_client import ItemSearch
-import os
-import pystac
+# import os
+# import pystac
 import requests
 
 class Stac():
+
+    def organize_collections(collections=[]):
+        output_collections = []
+        # print(type(collections), collections)
+        for collection in collections:
+            try:
+                data = collection.to_dict()
+                # print(data)
+                collection_obj = {}
+                collection_obj["id"] = data["id"].strip()
+                collection_obj["title"] = data["title"].strip()
+
+                start_date = data["extent"]["temporal"]["interval"][0][0]
+                end_date = data["extent"]["temporal"]["interval"][0][1]
+
+                if start_date is not None:
+                    collection_obj["start_date"] = start_date.split("T")[0]
+                else:
+                    collection_obj["start_date"] = ""
+
+                if end_date is not None:
+                    collection_obj["end_date"] = end_date.split("T")[0]
+                else:
+                    collection_obj["end_date"] = ""
+                collection_obj["bbox"] = ", ".join(
+                    [str(coord) for coord in data["extent"]["spatial"]["bbox"][0]]
+                )
+
+                for l in data["links"]:
+                    if l["rel"] == "about":
+                        collection_obj["metadata"] = l["href"]
+                    if l["rel"] == "self":
+                        collection_obj["href"] = l["href"]
+
+                collection_obj["description"] = (
+                    data["description"]
+                    .replace("\n", " ")
+                    .replace("\r", " ")
+                    .replace("\\u", " ")
+                    .replace("                 ", " ")
+                )
+                collection_obj["license"] = data["license"]
+                output_collections.append(collection_obj)
+            except Exception as err:
+                print("Error: ", collection)
+                print(err)
+                return None
+        if len(output_collections) > 0:
+            output_collections.sort(key= lambda x:x['title'])
+        return output_collections
 
     def stac_bands(url=None, collection=None, item=None, titiler_stac_endpoint=None, **kwargs):
         """Get band names of a single SpatialTemporal Asset Catalog (STAC) item.
@@ -155,6 +205,7 @@ class Stac():
         tile_url = Stac.stac_tile(
             url, collection, item, assets, bands, titiler_stac_endpoint, **kwargs
         )
+        return tile_url
         bounds = Stac.stac_bounds(url, collection, item, titiler_stac_endpoint)
         self.add_tile_layer(tile_url, name, attribution, opacity, shown)
         self.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
@@ -233,4 +284,87 @@ class Stac():
             return info
         else:
             return search
+        
+    def get_metadata(   
+        data_type="cog",
+        titiler_stac_endpoint=None,
+        url=None,
+        max_size=None,
+        **kwargs,
+    ):
+        if url is not None:
+            kwargs["url"] = url
+        if max_size is not None:
+            kwargs["max_size"] = max_size
 
+        if isinstance(titiler_stac_endpoint, str):
+            r = requests.get(f"{titiler_stac_endpoint}/{data_type}/metadata", params=kwargs).json()
+            return r
+        else:
+            return "Cannot process request: titiler stac endpoint not provided."
+
+    def get_tile_url(
+        data_type="cog",
+        url=None,
+        collection=None,
+        item=None,
+        assets=None,
+        bands=None,
+        palette=None,
+        titiler_stac_endpoint=None,
+        **kwargs,
+    ):
+        """Get a tile layer url from a single SpatialTemporal Asset Catalog (STAC) item.
+        Args:
+            url (str): HTTP URL to a STAC item
+            collection (str): STAC collection ID, e.g., landsat-8-c2-l2.
+            item (str): STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
+            assets (str | list): STAC asset ID, e.g., ["SR_B7", "SR_B5", "SR_B4"].
+            bands (list): A list of band names, e.g., ["SR_B7", "SR_B5", "SR_B4"]
+            titiler_stac_endpoint (str, optional): Titiler endpoint, Defaults to None.
+        Returns:
+            str: Returns the STAC Tile layer URL.
+        """
+        if url is None and collection is None:
+            raise ValueError("Either url or collection must be specified. stac_tile")
+
+        kwargs["rescale"] = "0,50"
+
+        if url is not None:
+            kwargs["url"] = url
+        if collection is not None:
+            kwargs["collection"] = collection
+        if item is not None:
+            kwargs["item"] = item
+
+        if palette is not None:
+            # kwargs["colormap_name"] = kwargs["palette"].lower()
+            kwargs["colormap_name"] = palette
+            # del kwargs["palette"]
+
+        if isinstance(bands, list) and len(set(bands)) == 1:
+            bands = bands[0]
+
+        if isinstance(assets, list) and len(set(assets)) == 1:
+            assets = assets[0]
+
+        if isinstance(bands, str):
+            bands = bands.split(",")
+        if isinstance(assets, str):
+            assets = assets.split(",")
+
+        kwargs["assets"] = assets
+
+        TileMatrixSetId = "WebMercatorQuad"
+        if "TileMatrixSetId" in kwargs.keys():
+            TileMatrixSetId = kwargs["TileMatrixSetId"]
+            kwargs.pop("TileMatrixSetId")
+
+        if isinstance(titiler_stac_endpoint, str):
+            r = requests.get(
+                f"{titiler_stac_endpoint}/{data_type}/{TileMatrixSetId}/tilejson.json",
+                params=kwargs,
+            ).json()
+            return r
+        else:
+            return "STAC ENDPOINT IS NECESSARY."

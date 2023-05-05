@@ -24,3 +24,6 @@ jupyter lab
 
 Note this library currently includes `rio.open` so must be run with an AWS identity that has access to the bucket the biomass products are in.
 
+**Styling Notes**
+- By default, ipywidget icons can be set to any from the font-awesome library v4: https://fontawesome.com/v4/icons/
+- By default, ipywidget buttons can be styled to any html colors: https://htmlcolorcodes.com/color-names/
