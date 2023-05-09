@@ -1,16 +1,17 @@
 """Main module."""
 import csv
-from io import BytesIO
 import re
 import requests
 
-from ipyleaflet import Map, DrawControl, WidgetControl, TileLayer, Popup, basemaps, basemap_to_tiles, SplitMapControl, Icon
+from ipyleaflet import Map, DrawControl, WidgetControl, TileLayer, Popup
 from .stac_discovery.stac_widget import StacDiscoveryWidget
 from .widgets.basemaps import BasemapsWidget
+from .widgets.draw import DrawControlWidget
 from IPython.display import display
-from ipywidgets import Box, HBox, VBox, Layout, SelectionSlider, Checkbox, Dropdown, Tab, ToggleButton, ToggleButtons, Button, Image, IntSlider, HTML, Output, jslink
+from ipywidgets import Box, HBox, VBox, Layout, SelectionSlider, IntSlider, Image
+from ipywidgets import Checkbox, Dropdown, Tab, ToggleButton, ToggleButtons, Button
+from ipywidgets import HTML, Output, jslink
 import matplotlib.pyplot as plt
-#from pydantic import BaseModel
 from shapely.geometry import Polygon
 import rioxarray
 import xarray as xr
@@ -40,38 +41,24 @@ class StacIpyleaflet(Map):
         if "zoom" not in kwargs:
             kwargs["zoom"] = 2
 
+        if "layout" not in kwargs:
+            kwargs["layout"] = Layout(height="600px")
+
+        if "scroll_wheel_zoom" not in kwargs:
+            kwargs["scroll_wheel_zoom"] = True        
+
         # Create map
         super().__init__(**kwargs)     
-
-        self.titiler_endpoint = "https://titiler.maap-project.org"
-        self.titiler_stac_endpoint = "https://titiler-stac.maap-project.org"
                   
         self.accent_color = "SteelBlue"
+        self.draw_control = DrawControlWidget.template(self)
         self.layers = BasemapsWidget.template(self)  
+
         self.buttons = {}
         self.selected_data = []
-        self.draw_control = None
         self.histogram_layer = None
         
-        """ DISABLING DRAW CONTROLS UNTIL WE INTRODUCE HISTOGRAMS """
-        # draw_control = DrawControl(
-        #     edit=True,
-        #     remove=True,
-        # )
-        # # Remove the other draw controls by setting them to empty objects
-        # draw_control.circlemarker = {}
-        # draw_control.polygon = {}
-        # draw_control.polyline = {}
-        # # Add rectangle draw control for bounding box
-        # draw_control.rectangle = {
-        #     "shapeOptions": {
-        #         "fillColor": "transparent",
-        #         "color": "#333",
-        #         "fillOpacity": 1.0
-        #     }
-        # }
-        # self.add_control(draw_control)
-        # self.draw_control = draw_control
+        self.add_control(self.draw_control)
         
         f=open("./loading.gif", "rb")
         gif_widget=Image(
@@ -102,24 +89,7 @@ class StacIpyleaflet(Map):
         stac_btn.style.button_color = "white"
         stac_btn.tooltip = "Open/Close STAC Data Search"
         stac_btn.observe(self.toggle_stac_widget_display, type="change", names=["value"])
-        self.buttons["stac"] = stac_btn
-
-        # menu_buttons = ToggleButtons(
-        #     value=None,
-        #     icons=["map-o", "search"],
-        #     options=["Map Layers ", "STAC Search "],
-        #     disabled=False,
-        #     tooltips=["Map Layers Menu", "STAC Data Search"],
-        #     style={"text_color": self.accent_color, "button_color": "white", "height":"50px"},
-        # )
-        # def toggle_menu_button(change):
-        #     print("TOGGLE BUTTON CHANGE ", change["new"])
-        #     if change["new"] == "Map Layers":
-        #         self.toggle_layers_widget_display(self)
-        #     elif change["new"] == "STAC Search":
-        #         self.toggle_stac_widget_display(self)
-
-        # menu_buttons.observe(toggle_menu_button, names="value")
+        self.buttons["stac"] = stac_btn        
 
         buttons_box_layout = Layout(display='flex',
                         flex_flow='row',
@@ -128,8 +98,8 @@ class StacIpyleaflet(Map):
                         width='100%',
                         height="50px")
         buttons_box = HBox(children=[layers_btn, stac_btn],layout=buttons_box_layout)
-        # buttons_box = HBox([menu_buttons], layout=buttons_box_layout)
         display(buttons_box)
+        display(self.draw_control.output)
 
         self.add_biomass_layers()
         self.add_custom_tools()
@@ -157,12 +127,11 @@ class StacIpyleaflet(Map):
             if self.stac_widget.layout.display == 'block':
                 self.stac_widget.layout.display = 'none'    
 
-    
     def create_layers_widget(self):
 
         layers_widget = Box(style= { "max-width: 420px" })        
         layers_widget.layout.flex_flow="column"
-        layers_widget.layout.max_height="320px"
+        layers_widget.layout.max_height="360px"
         layers_widget.layout.overflow="auto"
 
         tab_headers = ['Biomass Layers', 'Basemaps']
@@ -238,8 +207,9 @@ class StacIpyleaflet(Map):
                             #print("changed to %s" % change['new'])
                             for l in self.layers:
                                 if l.base:
-                                    if l.name == change['new']:
-                                        l.visible = True                                        
+                                    if l.name == change['new']:                                      
+                                        l.opacity = basemap_opacity_slider.value/100
+                                        l.visible = True        
                                     else:
                                         l.visible = False
                             return
@@ -277,43 +247,6 @@ class StacIpyleaflet(Map):
         # Create custom map widgets
         self.layers_widget = self.create_layers_widget()
         self.stac_widget = StacDiscoveryWidget.template(self)
-        
-        # button style
-        # button_styling = Layout(height="32px", width="32px", padding="0px 2px 0px 2px")
-
-        # Add a button to toggle the layers checkbox widget on and off
-        # stac_widget_button = Button(
-        #     tooltip="STAC Discovery",            
-        #     #icon="stack-exchange",
-        #     icon="search", # https://fontawesome.com/v4/icons/
-        #     layout=button_styling,
-        #     #button_style=""
-        # )
-        # set button color separately as any html colors https://htmlcolorcodes.com/color-names/
-        # stac_widget_button.style.text_color = "white"
-        # stac_widget_button.style.button_color = "DarkSlateGray"        
-        # stac_widget_button.on_click(self.toggle_stac_widget_display)
-
-        # layers_widget_button = Button(
-        #     tooltip="Layers List",
-        #     icon="map-o",
-        #     layout=button_styling,
-        #     #button_style="",
-        # )
-        # layers_widget_button.on_click(self.toggle_layers_widget_display)
-
-        # hist_button = Button(
-        #     tooltip="Histogram",
-        #     icon="bar-chart",
-        #     layout=button_styling,
-        #     #button_style="",
-        # )
-        # hist_button.on_click(self.create_histograms)
-        # toolbar_widget = VBox([layers_widget_button, hist_button, stac_widget_button ])
-        # toolbar_widget = VBox([layers_widget_button, stac_widget_button ])
-        
-        # toolbar_control = WidgetControl(widget=toolbar_widget, position="topright", id="toolbar_widgets")
-        # self.add(toolbar_control)
 
         layers_widget = VBox([self.layers_widget])
         stac_widget = VBox([self.stac_widget])
@@ -441,7 +374,7 @@ class StacIpyleaflet(Map):
                     ds = xds.sel(x=slice(bounds[0], bounds[2]), y=slice(bounds[3], bounds[1]))
                 else:
                     uuid_pattern = r'([a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12})'
-                    match = re.search(f"({self.titiler_endpoint}/mosaics/{uuid_pattern})/tiles", layer_url)
+                    match = re.search(f"({titiler_endpoint}/mosaics/{uuid_pattern})/tiles", layer_url)
                     if match:
                         mosaic_url = match.groups()[0]
                         # From titiler docs http://titiler.maap-project.org/docs
@@ -465,7 +398,6 @@ class StacIpyleaflet(Map):
             display()
             return
 
-
     # TODO(aimee): if you try and create a histogram for more than one layer, it creates duplicates in the popup
     def create_histograms(self, b):
         print(self, b)
@@ -480,6 +412,7 @@ class StacIpyleaflet(Map):
             self.update_selected_data()
         except Exception as e:
             return self.error_message(e)
+        
         if len(self.selected_data) == 0:
             return self.error_message("No data or bounding box selected.")
         else:
@@ -506,12 +439,7 @@ class StacIpyleaflet(Map):
         self.remove_layer(self.loading_widget_layer)
         self.add_layer(histogram_layer)
         return None
-
-    def draw_biomass_map(self):
-        self.add_biomass_layers()
-        self.add_custom_tools()
-        return None
-
+ 
     # generates warning/error popup
     def gen_popup_icon(self, msg):
         warning_msg = HTML()

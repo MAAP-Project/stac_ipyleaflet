@@ -12,7 +12,7 @@ class StacDiscoveryWidget():
         standard_width = "420px"
         styles = {
             "init": {"description_width": "initial",},
-            "desc": "white-space:normal;font-size:smaller; max-height:100px;"
+            "desc": "white-space:normal;font-size:smaller; max-height:80px;"
         }
         layouts = {
             "default": Layout(width=standard_width, padding="2px 6px"),
@@ -28,12 +28,13 @@ class StacDiscoveryWidget():
         # Templates for the STAC Discovery Widget
         stac_widget = VBox()
         stac_widget.layout.width="500px"
+        stac_widget.layout.height="400px"
         stac_widget.layout.flex_flow="column"
         stac_widget.layout.overflow="auto"
 
         stac_catalogs = [
-            # {"name": "MAAP STAC", "url": "https://stac.maap-project.org"},
-            {"name": "MAAP STAC", "url": "https://wssn144yw1.execute-api.us-west-2.amazonaws.com/"},            
+            {"name": "MAAP STAC", "url": "https://stac.maap-project.org"},
+            # {"name": "MAAP STAC", "url": "https://wssn144yw1.execute-api.us-west-2.amazonaws.com/"},            
             # {"name": "Element84 Earth Search", "url": "https://earth-search.aws.element84.com/v1"},
             # {"name": "Microsoft Planetary Computer", "url": "https://planetarycomputer.microsoft.com/api/stac/v1"},
         ]
@@ -334,8 +335,8 @@ class StacDiscoveryWidget():
     
 
         def update_default_display_settings():
+            print("STAC ITEM", self.stac_data["items"])
             assets = [i for i in self.stac_data["items"] if i["id"] == items_dropdown.value][0]["assets"]
-            # print("STAC BUTTONS", stac_buttons)
             # bands = [x for x in assets if assets[x].media_type and ("cloud-optimized" in assets[x].media_type)]            
             if len(assets.keys()) > 0:
                 with output:
@@ -399,7 +400,9 @@ class StacDiscoveryWidget():
                     else:
                         end_date_query = str(collection_end_date.value)
 
-                    _datetime = start_date_query + "/" + end_date_query
+                    _datetime = start_date_query 
+                    if collection_end_date.value is not None:
+                        _datetime = _datetime + "/" + end_date_query
                     url = selected_collection["href"]
                     _query_url = url if url.endswith("/items") else url + "/items"
                     
@@ -419,9 +422,7 @@ class StacDiscoveryWidget():
                     if len(options) > 0:
                         items_dropdown.options = options
                         output.clear_output()
-                        print(f"{len(options)} items were found - please select 1 to determine if it can be displayed.")
-                        # items_dropdown.value = options[0]
-                        # update_default_display_settings()
+                        print(f"{len(options)} items were found - please select 1 to determine if it can be displayed.")                        
                     else:
                         output.clear_output()
                         print("No items were found within this Collection. Please select another.")
@@ -454,8 +455,14 @@ class StacDiscoveryWidget():
                 selected_collection = [c for c in selected_collection_options if c["id"] == collections_dropdown.value][0]
                 collection_description.value = f'<div style="{styles["desc"]}">{selected_collection["description"]}</div>'
                 collection_url.value = f'<a href={selected_collection["href"]} target="_blank">{selected_collection["href"]}'
-                collection_start_date.value = datetime.strptime(selected_collection["start_date"], "%Y-%m-%d")
-                collection_end_date.value = datetime.strptime(selected_collection["end_date"], "%Y-%m-%d")
+                if selected_collection["start_date"] != "":
+                    collection_start_date.value = datetime.strptime(selected_collection["start_date"], "%Y-%m-%d")
+                else:
+                    collection_start_date.value = None
+                if selected_collection["end_date"] != "":
+                    collection_end_date.value = datetime.strptime(selected_collection["end_date"], "%Y-%m-%d")
+                else:
+                    collection_end_date.value = None
                 self.stac_data["collection"] = selected_collection
                 query_collection_items(selected_collection)
                 # raster_options.children = []
