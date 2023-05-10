@@ -1,25 +1,24 @@
 """Main module."""
 import csv
-import re
-import requests
-
 from ipyleaflet import Map, DrawControl, WidgetControl, TileLayer, Popup
-from .stac_discovery.stac_widget import StacDiscoveryWidget
-from .widgets.basemaps import BasemapsWidget
-from .widgets.draw import DrawControlWidget
 from IPython.display import display
 from ipywidgets import Box, HBox, VBox, Layout, SelectionSlider, IntSlider, Image
 from ipywidgets import Checkbox, Dropdown, Tab, ToggleButton, ToggleButtons, Button
 from ipywidgets import HTML, Output, jslink
 import matplotlib.pyplot as plt
-from shapely.geometry import Polygon
-import rioxarray
-import xarray as xr
 import numpy
-import numpy.ma as ma
+import re
+import requests
 from rio_tiler.io import Reader
 from rio_tiler.mosaic import mosaic_reader
 from rio_tiler.models import ImageData
+import rioxarray
+from shapely.geometry import Polygon
+import xarray as xr
+
+from .stac_discovery.stac_widget import StacDiscoveryWidget
+from .widgets.basemaps import BasemapsWidget
+from .widgets.draw import DrawControlWidget
 
 class StacIpyleaflet(Map):
     """

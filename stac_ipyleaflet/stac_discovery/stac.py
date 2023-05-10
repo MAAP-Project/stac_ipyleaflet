@@ -1,8 +1,5 @@
-# Code taken from https://github.com/giswqs/leafmap/blob/master/leafmap/stac.py
-
+# [SOME] code taken from https://github.com/giswqs/leafmap/blob/master/leafmap/stac.py
 from pystac_client import ItemSearch
-# import os
-# import pystac
 import requests
 
 class Stac():

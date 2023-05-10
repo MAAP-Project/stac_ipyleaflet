@@ -1,14 +1,12 @@
-from ipywidgets import Box, VBox, Tab, Output, Layout, Combobox, HTML, ToggleButtons, Dropdown, DatePicker, HBox, RadioButtons
-import pandas as pd
-import ipyevents
 from datetime import datetime
-from pathlib import Path
-from typing import Any
+from ipywidgets import Box, Combobox, DatePicker, Dropdown, HBox, HTML
+from ipywidgets import Layout, Output, RadioButtons, Tab, ToggleButtons, VBox
 from pystac_client import Client
 from .stac import Stac
 
 class StacDiscoveryWidget():
     def template(self) -> Box( style={"max_height: 200px"}):
+        titiler_stac_endpoint = "https://titiler.maap-project.org"
         standard_width = "420px"
         styles = {
             "init": {"description_width": "initial",},
@@ -34,8 +32,9 @@ class StacDiscoveryWidget():
 
         stac_catalogs = [
             {"name": "MAAP STAC", "url": "https://stac.maap-project.org"},
+            # {"name": "VEDA STAC", "url": "https://staging-stac.delta-backend.com"},
             # {"name": "MAAP STAC", "url": "https://wssn144yw1.execute-api.us-west-2.amazonaws.com/"},            
-            # {"name": "Element84 Earth Search", "url": "https://earth-search.aws.element84.com/v1"},
+            {"name": "Element84 Earth Search", "url": "https://earth-search.aws.element84.com/v1"},
             # {"name": "Microsoft Planetary Computer", "url": "https://planetarycomputer.microsoft.com/api/stac/v1"},
         ]
         # make list of name values from stac_catalogs
@@ -64,7 +63,7 @@ class StacDiscoveryWidget():
             options=catalog_options,
             value=self.stac_data["catalog"]["name"],
             style=styles["init"],
-            disabled=True,
+            # disabled=True,
             layout=layouts["default"],
         )
         catalogs_box = VBox(
@@ -335,16 +334,18 @@ class StacDiscoveryWidget():
     
 
         def update_default_display_settings():
-            print("STAC ITEM", self.stac_data["items"])
+            # print("STAC ITEM", self.stac_data["items"])
             assets = [i for i in self.stac_data["items"] if i["id"] == items_dropdown.value][0]["assets"]
             # bands = [x for x in assets if assets[x].media_type and ("cloud-optimized" in assets[x].media_type)]            
             if len(assets.keys()) > 0:
                 with output:
                     output.clear_output()
+                    print("ASSETS", assets)
                 if "data" in assets.keys():
                     data_url = assets["data"].get_absolute_href()
+                    print("DATA URL", data_url)
                     self.stac_data["data_url"] = data_url
-                    metadata = Stac.get_metadata(titiler_stac_endpoint=self.titiler_stac_endpoint, url=data_url)
+                    metadata = Stac.get_metadata(titiler_stac_endpoint=titiler_stac_endpoint, url=data_url)
                     print("METADATA", metadata)
                     self.stac_data["metadata"] = metadata
                     if "message" in metadata:
@@ -542,7 +543,7 @@ class StacDiscoveryWidget():
                             item=items_dropdown.value,
                             assets=assets,
                             palette=vis_params["colormap_name"],
-                            titiler_stac_endpoint=self.titiler_stac_endpoint
+                            titiler_stac_endpoint=titiler_stac_endpoint
                         )
                         if "tiles" in stac_url:
                             self.stac_data["tiles_url"] = stac_url["tiles"][0]
