@@ -3,7 +3,7 @@ import csv
 from ipyleaflet import Map, DrawControl, WidgetControl, TileLayer, Popup
 from IPython.display import display
 from ipywidgets import Box, HBox, VBox, Layout, SelectionSlider, IntSlider, Image
-from ipywidgets import Checkbox, Dropdown, Tab, ToggleButton, ToggleButtons, Button
+from ipywidgets import Checkbox, Dropdown, Tab, ToggleButton, Button
 from ipywidgets import HTML, Output, jslink
 import matplotlib.pyplot as plt
 import numpy
@@ -359,7 +359,7 @@ class StacIpyleaflet(Map):
                 else:
                     self.loading_widget_layer.open_popup()
 
-            for idx, layer in enumerate(visible_layers):
+            for layer in visible_layers:
                 layer_url = layer.url
                 ds = None
                 title = layer.name.replace('_', ' ').upper()  
@@ -382,8 +382,9 @@ class StacIpyleaflet(Map):
                         assets_endpoint = f"{self.titiler_stac_endpoint}/mosaicjson/{str_bounds}/assets?url={mosaic_url}/mosaicjson"
                         # create a dataset from multiple COGs
                         assets_response = requests.get(assets_endpoint)
-                        assets = assets_response.json()
-                        ds = self.gen_mosaic_dataset_reader(assets, bounds)
+                        if assets_response.status_code == 200:
+                            assets = assets_response.json()
+                            ds = self.gen_mosaic_dataset_reader(assets, bounds)
                 if ds.any():
                     ds.attrs["title"] = title
                     self.selected_data.append(ds)
