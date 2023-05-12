@@ -7,7 +7,12 @@ def write_biomass_layers():
     data_dir = 'biomass-dashboard-datasets/datasets/'
     files = os.listdir(data_dir)
 
-    with open('biomass-layers.csv', 'w', newline='') as csv_file:
+    biomass_file = os.path.join(
+        os.path.dirname(__package__),
+        "data",
+        "biomass-layers.csv",
+    )
+    with open(biomass_file, 'w', newline='') as csv_file:
         fieldnames = ['Layer Name', 'Tiles URL']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
@@ -20,7 +25,7 @@ def write_biomass_layers():
                     tile_url = tile_url.replace('{titiler_server_url}', 'https://titiler.maap-project.org')
                 file_obj.close()
             writer.writerow({
-                fieldnames[0]: data['id'].capitalize().replace('_', ' '), 
+                fieldnames[0]: data['id'].capitalize().replace('_', ' '),
                 fieldnames[1]: tile_url})
         csv_file.close()
 
