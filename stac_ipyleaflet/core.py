@@ -62,7 +62,7 @@ class StacIpyleaflet(Map):
         self.add_control(draw_control)
         self.draw_control = draw_control
 
-        f=open("./loading.gif", "rb")
+        f=open("shared-buckets/stac-ipyleaflet/loading.gif", "rb")
         gif_widget=ipywidgets.Image(
             value=f.read(),
             format='png',
@@ -148,7 +148,7 @@ class StacIpyleaflet(Map):
         self.add(WidgetControl(widget=stac_widget, position="topright"))
 
     def add_biomass_layers(self):
-        biomass_file = 'biomass-layers.csv'
+        biomass_file = "shared-buckets/stac-ipyleaflet/biomass-layers.csv"
         with open(biomass_file, newline='') as f:
             csv_reader = csv.reader(f)
             next(csv_reader, None)  # skip the headers
