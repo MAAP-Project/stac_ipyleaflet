@@ -1,4 +1,5 @@
 """Main module."""
+import os
 import csv
 from io import BytesIO
 import re
@@ -29,8 +30,8 @@ class StacIpyleaflet(Map):
     titiler_endpoint: str = "https://titiler.maap-project.org"
     titiler_stac_endpoint: str = "https://titiler-stac.maap-project.org"
     histogram_layer: Popup
-    warning_layer: Popup = None 
-    loading_widget_layer: Popup = None 
+    warning_layer: Popup = None
+    loading_widget_layer: Popup = None
     bbox_centroid: list = []
 
     def __init__(self, **kwargs):
@@ -62,13 +63,18 @@ class StacIpyleaflet(Map):
         self.add_control(draw_control)
         self.draw_control = draw_control
 
-        f=open("./loading.gif", "rb")
-        gif_widget=ipywidgets.Image(
-            value=f.read(),
-            format='png',
-            width=200,
-            height=200,
+        gif_file = os.path.join(
+            os.path.dirname(__package__),
+            "data",
+            "loading.gif",
         )
+        with open(gif_file, "rb") as f:
+            gif_widget=ipywidgets.Image(
+                value=f.read(),
+                format='png',
+                width=200,
+                height=200,
+            )
 
         loading_widget=ipywidgets.VBox()
         loading_widget.children=[gif_widget]
@@ -83,7 +89,7 @@ class StacIpyleaflet(Map):
             layers_widget.layout.display = 'block'
         elif layers_widget.layout.display == 'block':
             layers_widget.layout.display = 'none'
-    
+
     def stac_widget_display(self, b):
         stac_widget = self.stac_widget
         if stac_widget.layout.display == 'none':
@@ -148,7 +154,11 @@ class StacIpyleaflet(Map):
         self.add(WidgetControl(widget=stac_widget, position="topright"))
 
     def add_biomass_layers(self):
-        biomass_file = 'biomass-layers.csv'
+        biomass_file = os.path.join(
+            os.path.dirname(__package__),
+            "data",
+            "biomass-layers.csv",
+        )
         with open(biomass_file, newline='') as f:
             csv_reader = csv.reader(f)
             next(csv_reader, None)  # skip the headers
@@ -213,7 +223,7 @@ class StacIpyleaflet(Map):
             with Reader(src_path) as src:
                 # src.part((minx, miny, maxx, maxy), **kwargs)
                 return src.part(bounds, *args, **kwargs)
-        # mosaic_reader will use multithreading to distribute the image fetching 
+        # mosaic_reader will use multithreading to distribute the image fetching
         # and then merge all arrays together
         # Vincent: This will not work if the image do not have the same resolution (because we won't be able to overlay them).
         # If you know the resolution you want to use you can use width=.., height=.. instead of max_size=512 (it will ensure you create the same array size for all the images.
@@ -229,7 +239,7 @@ class StacIpyleaflet(Map):
         # hist = {}
         # for ii, b in enumerate(img.count):
         #     h_counts, h_keys = numpy.histogram(data[b].compressed())
-        #     hist[f"b{ii + 1}"] = [h_counts.tolist(), h_keys.tolist()]        
+        #     hist[f"b{ii + 1}"] = [h_counts.tolist(), h_keys.tolist()]
         return xr.DataArray(data)
 
     def update_selected_data(self):
@@ -255,7 +265,7 @@ class StacIpyleaflet(Map):
             for idx, layer in enumerate(visible_layers):
                 layer_url = layer.url
                 ds = None
-                title = layer.name.replace('_', ' ').upper()  
+                title = layer.name.replace('_', ' ').upper()
                 match = re.search('url=(.+.tif)', layer_url)
                 if match and match.group(1):
                     s3_url = match.group(1)
@@ -319,7 +329,7 @@ class StacIpyleaflet(Map):
                     except Exception as err:
                         self.remove_layer(self.loading_widget_layer)
                         self.gen_popup_icon(f"Error: {err}")
-                        return 
+                        return
                     axes.set_title(dataset.attrs['title'])
                     display(fig)
 
