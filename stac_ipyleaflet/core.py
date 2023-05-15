@@ -6,7 +6,8 @@ import re
 import requests
 
 from ipyleaflet import Map, DrawControl, WidgetControl, TileLayer, Popup
-from .stac_discovery.stac_widget import StacDiscoveryWidget
+from stac_discovery.stac_widget import StacDiscoveryWidget
+from importlib.resources import files
 from IPython.display import display
 import ipywidgets
 from ipywidgets import HTML
@@ -63,11 +64,7 @@ class StacIpyleaflet(Map):
         self.add_control(draw_control)
         self.draw_control = draw_control
 
-        gif_file = os.path.join(
-            os.path.dirname(__package__),
-            "data",
-            "loading.gif",
-        )
+        gif_file = files('stac_ipyleaflet.data').joinpath('loading.gif')
         with open(gif_file, "rb") as f:
             gif_widget=ipywidgets.Image(
                 value=f.read(),
@@ -153,12 +150,8 @@ class StacIpyleaflet(Map):
         stac_widget.children = [stac_widget_button, self.stac_widget]
         self.add(WidgetControl(widget=stac_widget, position="topright"))
 
-    def add_biomass_layers(self):
-        biomass_file = os.path.join(
-            os.path.dirname(__package__),
-            "data",
-            "biomass-layers.csv",
-        )
+    def add_biomass_layers(self):        
+        biomass_file = files('stac_ipyleaflet.data').joinpath('biomass-layers.csv')
         with open(biomass_file, newline='') as f:
             csv_reader = csv.reader(f)
             next(csv_reader, None)  # skip the headers
