@@ -21,7 +21,7 @@ class StacDiscoveryWidget():
         padding = "0px 0px 0px 5px"
         style = {"description_width": "initial"}
 
-        nasa_cmr_path = files('stac_ipyleaflet.stac_discovery').joinpath('catalogs').joinpath('nasa_maap_stac.tsv')
+nasa_cmr_path = files("stac_ipyleaflet") / "stac_discovery" / "catalogs" / "nasa_maap_stac.tsv" 
         stac_info = {
             "MAAP STAC": {
                 "filename": nasa_cmr_path,
