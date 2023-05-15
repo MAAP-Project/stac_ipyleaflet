@@ -6,7 +6,7 @@ import re
 import requests
 
 from ipyleaflet import Map, DrawControl, WidgetControl, TileLayer, Popup
-from .stac_discovery.stac_widget import StacDiscoveryWidget
+from stac_ipyleaflet.stac_discovery.stac_widget import StacDiscoveryWidget
 from importlib.resources import files
 from IPython.display import display
 import ipywidgets
