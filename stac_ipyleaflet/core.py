@@ -18,8 +18,8 @@ from shapely.geometry import Polygon
 import xarray as xr
 
 from stac_ipyleaflet.stac_discovery.stac_widget import StacDiscoveryWidget
-from stac_ipyleaflet.widgets.basemaps import BasemapsWidget
-from stac_ipyleaflet.widgets.draw import DrawControlWidget
+from .widgets.basemaps import BasemapsWidget
+from .widgets.draw import DrawControlWidget
 
 class StacIpyleaflet(Map):
     """
