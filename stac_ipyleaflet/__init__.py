@@ -1,1 +1,1 @@
-from .core import *
+from stac_ipyleaflet.core import *

@@ -1,5 +1,4 @@
 from datetime import datetime
-from importlib.resources import files
 from ipywidgets import Box, Combobox, DatePicker, Dropdown, HBox, HTML
 from ipywidgets import Layout, Output, RadioButtons, Tab, ToggleButtons, VBox
 from pystac_client import Client
