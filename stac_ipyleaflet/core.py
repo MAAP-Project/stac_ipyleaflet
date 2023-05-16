@@ -99,7 +99,7 @@ class StacIpyleaflet(Map):
                         height="50px")
         buttons_box = HBox(children=[layers_btn, stac_btn],layout=buttons_box_layout)
         display(buttons_box)
-        # display(self.draw_control.output)
+        display(self.draw_control.output)
 
         self.add_biomass_layers()
         self.add_custom_tools()
