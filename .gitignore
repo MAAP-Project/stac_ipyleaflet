@@ -105,5 +105,5 @@ ENV/
 .vscode/
 .idea/
 
-# macos add-ins
-.DS_Store
+# macos files
+*.DS_Store

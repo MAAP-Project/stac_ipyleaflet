@@ -1,5 +1,6 @@
 """Main module."""
 import csv
+from importlib.resources import files
 from ipyleaflet import Map, DrawControl, WidgetControl, TileLayer, Popup
 from IPython.display import display
 from ipywidgets import Box, HBox, VBox, Layout, SelectionSlider, IntSlider, Image
@@ -16,9 +17,9 @@ import rioxarray
 from shapely.geometry import Polygon
 import xarray as xr
 
-from .stac_discovery.stac_widget import StacDiscoveryWidget
-from .widgets.basemaps import BasemapsWidget
-from .widgets.draw import DrawControlWidget
+from stac_ipyleaflet.stac_discovery.stac_widget import StacDiscoveryWidget
+from stac_ipyleaflet.widgets.basemaps import BasemapsWidget
+from stac_ipyleaflet.widgets.draw import DrawControlWidget
 
 class StacIpyleaflet(Map):
     """
@@ -58,18 +59,18 @@ class StacIpyleaflet(Map):
         self.histogram_layer = None
         
         self.add_control(self.draw_control)
-        
-        f=open("./loading.gif", "rb")
-        gif_widget=Image(
-            value=f.read(),
-            format='png',
-            width=200,
-            height=200,
-        )
+
+        gif_file = files('stac_ipyleaflet.data').joinpath('loading.gif')
+        with open(gif_file, "rb") as f:
+            gif_widget=Image(
+                value=f.read(),
+                format='png',
+                width=200,
+                height=200,
+            )
 
         loading_widget=VBox()
         loading_widget.children=[gif_widget]
-        loading_location = self.bbox_centroid or self.center
         self.loading_widget_layer = Popup(child=loading_widget, min_width=200, min_height=200)
 
         main_button_layout = Layout(width="120px", height="35px", border="1px solid #4682B4")
@@ -254,8 +255,8 @@ class StacIpyleaflet(Map):
         self.add(layers_control)
         self.add(stack_control)
 
-    def add_biomass_layers(self):
-        biomass_file = 'biomass-layers.csv'
+    def add_biomass_layers(self):        
+        biomass_file = files('stac_ipyleaflet.data').joinpath('biomass-layers.csv')
         with open(biomass_file, newline='') as f:
             csv_reader = csv.reader(f)
             next(csv_reader, None)  # skip the headers
@@ -320,7 +321,7 @@ class StacIpyleaflet(Map):
             with Reader(src_path) as src:
                 # src.part((minx, miny, maxx, maxy), **kwargs)
                 return src.part(bounds, *args, **kwargs)
-        # mosaic_reader will use multithreading to distribute the image fetching 
+        # mosaic_reader will use multithreading to distribute the image fetching
         # and then merge all arrays together
         # Vincent: This will not work if the image do not have the same resolution (because we won't be able to overlay them).
         # If you know the resolution you want to use you can use width=.., height=.. instead of max_size=512 (it will ensure you create the same array size for all the images.
@@ -336,7 +337,7 @@ class StacIpyleaflet(Map):
         # hist = {}
         # for ii, b in enumerate(img.count):
         #     h_counts, h_keys = numpy.histogram(data[b].compressed())
-        #     hist[f"b{ii + 1}"] = [h_counts.tolist(), h_keys.tolist()]        
+        #     hist[f"b{ii + 1}"] = [h_counts.tolist(), h_keys.tolist()]
         return xr.DataArray(data)
 
     def update_selected_data(self):
@@ -362,7 +363,7 @@ class StacIpyleaflet(Map):
             for layer in visible_layers:
                 layer_url = layer.url
                 ds = None
-                title = layer.name.replace('_', ' ').upper()  
+                title = layer.name.replace('_', ' ').upper()
                 match = re.search('url=(.+.tif)', layer_url)
                 if match and match.group(1):
                     s3_url = match.group(1)
@@ -428,7 +429,7 @@ class StacIpyleaflet(Map):
                     except Exception as err:
                         self.remove_layer(self.loading_widget_layer)
                         self.gen_popup_icon(f"Error: {err}")
-                        return 
+                        return
                     axes.set_title(dataset.attrs['title'])
                     display(fig)
 
