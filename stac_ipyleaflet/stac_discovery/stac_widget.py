@@ -1,6 +1,6 @@
 from ipywidgets import VBox, Output, Layout, Text, ToggleButtons, Dropdown, DatePicker, HBox, Textarea, Checkbox
 import pandas as pd
-import ipyevents
+from importlib.resources import files
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -21,7 +21,7 @@ class StacDiscoveryWidget():
         padding = "0px 0px 0px 5px"
         style = {"description_width": "initial"}
 
-        nasa_cmr_path = Path("stac_ipyleaflet/stac_discovery/catalogs/nasa_maap_stac.tsv")
+        nasa_cmr_path = files("stac_ipyleaflet") / "stac_discovery" / "catalogs" / "nasa_maap_stac.tsv" 
         stac_info = {
             "MAAP STAC": {
                 "filename": nasa_cmr_path,
