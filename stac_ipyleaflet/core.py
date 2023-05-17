@@ -3,7 +3,7 @@ import csv
 from importlib.resources import files
 from ipyleaflet import Map, DrawControl, WidgetControl, TileLayer, Popup
 from IPython.display import display
-from ipywidgets import Box, HBox, VBox, Layout, SelectionSlider, IntSlider, Image
+from ipywidgets import Box, HBox, VBox, Layout, SelectionSlider, HTML, IntSlider, Image
 from ipywidgets import Checkbox, Dropdown, Tab, ToggleButton, Button
 from ipywidgets import HTML, Output, jslink
 import matplotlib.pyplot as plt
@@ -25,6 +25,9 @@ class StacIpyleaflet(Map):
     """
     Stac ipyleaflet is an extension to ipyleaflet `Map`.
     """
+   
+    raw_input = input
+
     draw_control: DrawControl
     histogram_layer: Popup
     warning_layer: Popup = None
@@ -39,7 +42,7 @@ class StacIpyleaflet(Map):
             kwargs["center"] = [20, 0]
 
         if "zoom" not in kwargs:
-            kwargs["zoom"] = 2
+            kwargs["zoom"] = 4
 
         if "layout" not in kwargs:
             kwargs["layout"] = Layout(height="600px")
@@ -51,15 +54,13 @@ class StacIpyleaflet(Map):
         super().__init__(**kwargs)     
                   
         self.accent_color = "SteelBlue"
-        self.draw_control = DrawControlWidget.template(self)
         self.layers = BasemapsWidget.template(self)  
 
         self.buttons = {}
         self.selected_data = []
         self.histogram_layer = None
+        self.draw_control_added = False
         
-        self.add_control(self.draw_control)
-
         gif_file = files('stac_ipyleaflet.data').joinpath('loading.gif')
         with open(gif_file, "rb") as f:
             gif_widget=Image(
@@ -74,6 +75,12 @@ class StacIpyleaflet(Map):
         self.loading_widget_layer = Popup(child=loading_widget, min_width=200, min_height=200)
 
         main_button_layout = Layout(width="120px", height="35px", border="1px solid #4682B4")
+        draw_btn = ToggleButton(description="Draw", icon="square-o", layout=main_button_layout)
+        draw_btn.style.text_color = self.accent_color
+        draw_btn.style.button_color = "transparent"
+        draw_btn.tooltip = "Draw Area of Interest"
+        draw_btn.observe(self.toggle_draw_widget_display, type="change", names=["value"])
+        self.buttons["draw"] = draw_btn
         layers_btn = ToggleButton(description="Layers", icon="map-o", layout=main_button_layout)
         layers_btn.style.text_color = self.accent_color
         layers_btn.style.button_color = "transparent"
@@ -97,12 +104,12 @@ class StacIpyleaflet(Map):
                         justify_content='center',
                         width='100%',
                         height="50px")
-        buttons_box = HBox(children=[layers_btn, stac_btn],layout=buttons_box_layout)
+        buttons_box = HBox(children=[draw_btn, layers_btn, stac_btn],layout=buttons_box_layout)
         display(buttons_box)
-        display(self.draw_control.output)
-
+        
         self.add_biomass_layers()
         self.add_custom_tools()
+        self.draw_control = DrawControlWidget.template(self)
 
         return None
 
@@ -112,7 +119,11 @@ class StacIpyleaflet(Map):
             if self.layers_widget.layout.display == 'none':
                 self.layers_widget.layout.display = 'block'
                 self.stac_widget.layout.display = 'none'
+                self.aoi_widget.layout.display = 'none'
                 self.buttons["stac"].value = False
+                self.buttons["draw"].value = False
+                if self.draw_control_added:
+                    self.remove(self.draw_control)
         if not b["new"]:
             if self.layers_widget.layout.display == 'block':
                 self.layers_widget.layout.display = 'none'
@@ -122,10 +133,54 @@ class StacIpyleaflet(Map):
             if self.stac_widget.layout.display == 'none':
                 self.stac_widget.layout.display = 'block'
                 self.layers_widget.layout.display = 'none'
+                self.aoi_widget.layout.display = 'none'
                 self.buttons["layers"].value = False
+                self.buttons["draw"].value = False
+                if self.draw_control_added:
+                    self.remove(self.draw_control)
         if not b["new"]:
             if self.stac_widget.layout.display == 'block':
-                self.stac_widget.layout.display = 'none'    
+                self.stac_widget.layout.display = 'none'
+    
+    def toggle_draw_widget_display(self, b):   
+        if b["new"]:
+            if self.aoi_widget.layout.display == 'none':
+                self.aoi_widget.layout.display = 'block'
+                self.add_control(self.draw_control)
+                self.draw_control_added = True
+                self.stac_widget.layout.display = 'none'
+                self.layers_widget.layout.display = 'none'
+                self.buttons["stac"].value = False
+                self.buttons["layers"].value = False
+        if not b["new"]:
+            if self.aoi_widget.layout.display == 'block':
+                self.aoi_widget.layout.display = 'none'
+                if self.draw_control_added:
+                    self.remove(self.draw_control)
+                    self.draw_control_added = False
+
+    def create_aoi_widget(self):
+        aoi_widget = HBox(layout=Layout(width="300px", padding="0px 6px 2px 6px", margin="0px 2px 2px 2px"))        
+        aoi_widget.layout.flex_flow="column"
+        aoi_widget.layout.min_width="300px"
+        aoi_widget.layout.max_height="360px"
+        aoi_widget.layout.overflow="auto"
+
+        aoi_widget_desc = HTML(
+            value="<h3><b>AOI Coordinates</b></h3>", 
+        )
+        aoi_html = HTML(
+            value="<code>Waiting for area of interest...</code>",
+            description="",
+        )                
+
+        # copy_button = Button(description="Copy", icon="copy", disabled=True, laytout=Layout(padding="2px 2px"))
+
+        aoi_widget.children = [aoi_widget_desc, aoi_html]
+        aoi_widget.layout.display ='none'
+
+        return aoi_widget
+    
 
     def create_layers_widget(self):
 
@@ -247,13 +302,17 @@ class StacIpyleaflet(Map):
         # Create custom map widgets
         self.layers_widget = self.create_layers_widget()
         self.stac_widget = StacDiscoveryWidget.template(self)
+        self.aoi_widget = self.create_aoi_widget()
 
         layers_widget = VBox([self.layers_widget])
         stac_widget = VBox([self.stac_widget])
+        aoi_widget = VBox([self.aoi_widget])
         layers_control = WidgetControl(widget=layers_widget, position="topright", id="layers_widget")
         stack_control = WidgetControl(widget=stac_widget, position="topright", id="stac_widget")
+        aoi_control = WidgetControl(widget=aoi_widget, position="topright", id="aoi_widget")
         self.add(layers_control)
         self.add(stack_control)
+        self.add(aoi_control)
 
     def add_biomass_layers(self):        
         biomass_file = files('stac_ipyleaflet.data').joinpath('biomass-layers.csv')

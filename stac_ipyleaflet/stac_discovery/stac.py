@@ -54,32 +54,21 @@ class Stac():
             output_collections.sort(key= lambda x:x['title'])
         return output_collections
 
-    def stac_bands(url=None, collection=None, item=None, titiler_stac_endpoint=None, **kwargs):
-        """Get band names of a single SpatialTemporal Asset Catalog (STAC) item.
+    def get_item_info(url=None, **kwargs):
+        """Get INFO of a single SpatialTemporal Asset Catalog (STAC) **COG** item.
         Args:
             url (str): HTTP URL to a STAC item
-            collection (str): STAC collection ID, e.g., landsat-8-c2-l2.
-            item (str): STAC item ID, e.g., LC08_L2SP_047027_20201204_02_T1.
-            titiler_stac_endpoint (str, optional): Titiler endpoint. Defaults to None.
         Returns:
-            list: A list of band names
+            json: Response with Item info.
         """
-        if url is None and collection is None:
-            raise ValueError("Either url or collection must be specified. stac_bands")
+        if url is None:
+            raise ValueError("Item url must be specified to get stac_bands")
 
-        if url is not None:
-            kwargs["url"] = url
-        if collection is not None:
-            kwargs["collection"] = collection
-        if item is not None:
-            kwargs["item"] = item
-
-        if isinstance(titiler_stac_endpoint, str):
-            r = requests.get(f"{titiler_stac_endpoint}/stac/assets", params=kwargs).json()
-        else:
-            r = requests.get(titiler_stac_endpoint.url_for_stac_assets(), params=kwargs).json()
-
+        if isinstance(url, str):
+            r = requests.get(f"{url}", ).json()
+            
         return r
+    
 
     def stac_tile(
         url=None,

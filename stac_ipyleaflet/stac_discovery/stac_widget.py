@@ -3,11 +3,12 @@ from ipywidgets import Box, Combobox, DatePicker, Dropdown, HBox, HTML
 from ipywidgets import Layout, Output, RadioButtons, Tab, ToggleButtons, VBox
 from pystac_client import Client
 from stac_ipyleaflet.stac_discovery.stac import Stac
+import json
 
 class StacDiscoveryWidget():
     def template(self) -> Box( style={"max_height: 200px"}):
         titiler_stac_endpoint = "https://titiler.maap-project.org"
-        standard_width = "420px"
+        standard_width = "460px"
         styles = {
             "init": {"description_width": "initial",},
             "desc": "white-space:normal;font-size:smaller; max-height:80px;"
@@ -25,7 +26,7 @@ class StacDiscoveryWidget():
 
         # Templates for the STAC Discovery Widget
         stac_widget = VBox()
-        stac_widget.layout.width="500px"
+        stac_widget.layout.width="600px"
         stac_widget.layout.height="400px"
         stac_widget.layout.flex_flow="column"
         stac_widget.layout.overflow="auto"
@@ -151,6 +152,7 @@ class StacDiscoveryWidget():
         band_width = "125px"
 
         singular_band_dropdown = Dropdown(
+            options=[1],
             tooltip="Present Band",
             style=styles["init"],
             layout=layouts["default"],
@@ -334,14 +336,15 @@ class StacDiscoveryWidget():
     
 
         def update_default_display_settings():
-            # print("STAC ITEM", self.stac_data["items"])
             assets = [i for i in self.stac_data["items"] if i["id"] == items_dropdown.value][0]["assets"]
-            # bands = [x for x in assets if assets[x].media_type and ("cloud-optimized" in assets[x].media_type)]            
+            href = [i for i in self.stac_data["items"] if i["id"] == items_dropdown.value][0]["href"]
+                      
             if len(assets.keys()) > 0:
                 with output:
                     output.clear_output()
-                    print("ASSETS", assets)
-                if "data" in assets.keys():
+                    # print("ASSETS", assets)
+                asset_keys = assets.keys()
+                if "data" in asset_keys:
                     data_url = assets["data"].get_absolute_href()
                     print("DATA URL", data_url)
                     self.stac_data["data_url"] = data_url
@@ -350,11 +353,9 @@ class StacDiscoveryWidget():
                     self.stac_data["metadata"] = metadata
                     if "message" in metadata:
                         print("MESSAGE: ", metadata["message"])
-                    
                     if "statistics" in metadata:
                         minv, maxv = metadata["statistics"]["1"]["min"], metadata["statistics"]["1"]["max"]
                         print("MIN/MAX", minv, maxv)
-                    
                     if "band_metadata" in metadata:
                         bands = [b for b in metadata["band_metadata"][0] if len(b) > 0]
                         default_bands = Stac.set_default_bands(bands)
@@ -374,8 +375,32 @@ class StacDiscoveryWidget():
                         else:
                             raster_options.children = []                      
                             singular_band_dropdown.value = None
+                
                     else:
                         print("\nDATA HAS 0 BANDS.")
+            
+                if "cog_default" in asset_keys:
+                    data_url = assets["cog_default"].get_absolute_href()
+                    self.stac_data["data_url"] = data_url
+                    metadata = Stac.get_item_info(url=href)
+                    print(json.dumps(metadata, indent=4))
+                    self.stac_data["metadata"] = metadata
+                    raw_bands = metadata["assets"]["cog_default"]["raster:bands"]
+                    if "statistics" in raw_bands[0]:
+                        minv, maxv = raw_bands[0]["statistics"]["minimum"], raw_bands[0]["statistics"]["maximum"]
+                    
+                    if len(raw_bands) == 1:
+                        raster_options.children = [
+                            HBox([singular_band_dropdown_box]),
+                            HBox([palette_categories_dropdown_box]),
+                            HBox([palettes_radiobuttons_box]),
+                            # checkbox,
+                            # params_widget,
+                        ]
+                        # singular_band_dropdown.options = ['1']
+                        # singular_band_dropdown.value = ['1']
+                        # stac_tab_widget.selected_index = 1
+                        stac_buttons.disabled = False
                     
             else:
                 print("This item cannot displayed. Only Cloud-Optimized GeoTIFFs are supported at this time.")
@@ -486,9 +511,10 @@ class StacDiscoveryWidget():
         items_dropdown.observe(items_changed, names="value")
 
         def palette_category_changed(change):
-            new_palettes = list_palettes(lowercase=True, category=palette_categories_dropdown.value)
-            palette_radiobuttons.options = new_palettes
-            palette_radiobuttons.value = new_palettes[0]
+            if change["new"]:
+                new_palettes = list_palettes(lowercase=True, category=palette_categories_dropdown.value)
+                palette_radiobuttons.options = new_palettes
+                palette_radiobuttons.value = new_palettes[0]
 
         palette_categories_dropdown.observe(palette_category_changed, names="value")
 
@@ -519,7 +545,7 @@ class StacDiscoveryWidget():
                         #     vis_params = eval(add_params.value)
                         # else:
                         vis_params = {}
-
+                        
                         if (palette_radiobuttons.value and singular_band_dropdown.options) or (palette_radiobuttons.value and "expression" in vis_params):
                             vis_params["colormap_name"] = palette_radiobuttons.value
 
@@ -534,9 +560,6 @@ class StacDiscoveryWidget():
                         else:
                             assets = ""
 
-                        print("COLOR MAP", vis_params["colormap_name"])
-                        print("ASSETS", assets)
-                        # print("URL", self.stac_data["data_url"])
                         stac_url = Stac.get_tile_url(
                             url=self.stac_data["data_url"],
                             collection=self.stac_data["collection"]["id"],
@@ -548,16 +571,20 @@ class StacDiscoveryWidget():
                         if "tiles" in stac_url:
                             self.stac_data["tiles_url"] = stac_url["tiles"][0]
                             try:
-                                bounds = self.stac_data["metadata"]["bounds"]
-                                print("BOUNDS", bounds)
+                                if "bounds" in self.stac_data["metadata"]:
+                                    bounds = self.stac_data["metadata"]["bounds"]
+                                else:
+                                    bounds = self.stac_data["metadata"]["bbox"]
+
                                 tile_url = self.stac_data["tiles_url"]
                                 name = items_dropdown.value
-                                attribution="TEST"
+                                attribution=name
                                 self.add_tile_layer(url=tile_url, name=name, attribution=attribution)
                                 self.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
-                                # output.clear_output()
+                                output.clear_output()
                                 print("STAC URL", stac_url["tiles"][0])
                             except Exception as err:
+                                output.clear_output()
                                 print("Display error: ", err)
 
             """ elif change["new"] == "Reset":
