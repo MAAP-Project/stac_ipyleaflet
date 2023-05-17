@@ -8,7 +8,7 @@ import json
 class StacDiscoveryWidget():
     def template(self) -> Box( style={"max_height: 200px"}):
         titiler_stac_endpoint = "https://titiler.maap-project.org"
-        standard_width = "460px"
+        standard_width = "500px"
         styles = {
             "init": {"description_width": "initial",},
             "desc": "white-space:normal;font-size:smaller; max-height:80px;"
@@ -582,7 +582,7 @@ class StacDiscoveryWidget():
                                 self.add_tile_layer(url=tile_url, name=name, attribution=attribution)
                                 self.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
                                 output.clear_output()
-                                print("STAC URL", stac_url["tiles"][0])
+                                # print("STAC URL", stac_url["tiles"][0])
                             except Exception as err:
                                 output.clear_output()
                                 print("Display error: ", err)
