@@ -98,7 +98,12 @@ class StacDiscoveryWidget():
             ]
         )
         collection_url = HTML(
-            value=f'<a href={self.stac_data["collection"]["href"]} target="_blank">{self.stac_data["collection"]["href"]}',
+            value=f'<a href={self.stac_data["collection"]["href"]} target="_blank">{self.stac_data["collection"]["href"]}</a>',
+            style=styles["init"],
+            layout=layouts["default"],
+        )
+        collection_url_browser = HTML(
+            value=f'<a href={self.stac_data["collection"]["href"].replace("https://", "https://stac-browser.maap-project.org/external/")} target="_blank"><b>View in STAC Browser</b></a>',
             style=styles["init"],
             layout=layouts["default"],
         )
@@ -106,7 +111,7 @@ class StacDiscoveryWidget():
         collection_url_box = VBox(
             [
                 HTML(value="<b>URL</b>", style=styles["init"], layout=layouts["header"],),
-                collection_url
+                collection_url, collection_url_browser
             ]
         )
         collection_start_date = DatePicker(
