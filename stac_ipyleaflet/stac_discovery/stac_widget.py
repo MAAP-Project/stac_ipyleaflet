@@ -3,12 +3,11 @@ from ipywidgets import Box, Combobox, DatePicker, Dropdown, HBox, HTML
 from ipywidgets import Layout, Output, RadioButtons, Tab, ToggleButtons, VBox
 from pystac_client import Client
 from stac_ipyleaflet.stac_discovery.stac import Stac
-import json
 
 class StacDiscoveryWidget():
     def template(self) -> Box( style={"max_height: 200px"}):
         titiler_stac_endpoint = "https://titiler.maap-project.org"
-        standard_width = "500px"
+        standard_width = "440px"
         styles = {
             "init": {"description_width": "initial",},
             "desc": "white-space:normal;font-size:smaller; max-height:80px;"
@@ -16,7 +15,7 @@ class StacDiscoveryWidget():
         layouts = {
             "default": Layout(width=standard_width, padding="2px 6px"),
             "header": Layout(width=standard_width, padding="2px 6px", margin="2px 2px -6px 2px"),
-            "buttons": Layout(display="flex", flex_flow="row", align_items="center", justify_content="flex-end", margin="16px 0px 4px -10px", width="100%"),
+            "buttons": Layout(display="flex", flex_flow="row", justify_content="flex-end", margin="0.5rem 1.5rem"),
             "radio": Layout(display="flex", width="max-content", padding="2px 6px"),
         }
 
@@ -26,7 +25,7 @@ class StacDiscoveryWidget():
 
         # Templates for the STAC Discovery Widget
         stac_widget = VBox()
-        stac_widget.layout.width="600px"
+        stac_widget.layout.width="480px"
         stac_widget.layout.height="400px"
         stac_widget.layout.flex_flow="column"
         stac_widget.layout.overflow="auto"
@@ -134,11 +133,11 @@ class StacDiscoveryWidget():
                 HBox([collection_start_date, collection_end_date])
             ]
         )
-        items_dropdown = Combobox(
+        items_dropdown = Dropdown(
             options=[],
+            value=None,
             style=styles["init"],
-            layout=layouts["default"],
-            ensure_option=True
+            layout=layouts["default"]
         )
         items_box = VBox(
             [
@@ -241,7 +240,7 @@ class StacDiscoveryWidget():
 
         palette_category_options = list_palette_categories()
         palette_categories_dropdown = Dropdown(
-            options = palette_category_options,
+            options=palette_category_options,
             value=palette_category_options[0],
             layout=layouts["default"],
             style=styles["init"],
@@ -297,10 +296,10 @@ class StacDiscoveryWidget():
         ])
         stac_buttons = ToggleButtons(
             value=None,
-            options=["Display"],
+            options=["Display "],
+            icons=["map"],
             disabled=True,
-            tooltips=["Display Item"],
-            style={"button_width": "50px"},
+            tooltips=["Display selected Item on the Map"],
         )
         buttons_box = Box([stac_buttons], layout=layouts["buttons"])
         stac_tab_labels = ['Catalog', 'Visualization']
@@ -364,7 +363,7 @@ class StacDiscoveryWidget():
                     if "band_metadata" in metadata:
                         bands = [b for b in metadata["band_metadata"][0] if len(b) > 0]
                         default_bands = Stac.set_default_bands(bands)
-                        print("BANDS", default_bands)
+                        # print("BANDS", default_bands)
                         if len(bands) == 1:
                             raster_options.children = [
                                 HBox([singular_band_dropdown_box]),
@@ -388,7 +387,6 @@ class StacDiscoveryWidget():
                     data_url = assets["cog_default"].get_absolute_href()
                     self.stac_data["data_url"] = data_url
                     metadata = Stac.get_item_info(url=href)
-                    print(json.dumps(metadata, indent=4))
                     self.stac_data["metadata"] = metadata
                     raw_bands = metadata["assets"]["cog_default"]["raster:bands"]
                     if "statistics" in raw_bands[0]:
@@ -414,7 +412,7 @@ class StacDiscoveryWidget():
         def query_collection_items(selected_collection):
             # print("SELECTED TO QUERY", selected_collection)
             items_dropdown.options = []
-            items_dropdown.value = ""
+            items_dropdown.value = None
             with output:
                 output.clear_output()
                 print("Retrieving items...")
@@ -540,7 +538,7 @@ class StacDiscoveryWidget():
             if change["new"] == "Display":
                 with output:
                     output.clear_output()
-                    if items_dropdown.value:
+                    if not items_dropdown.value == None:
                         print(f"Loading data for {items_dropdown.value}...")
                         # if (
                         #     checkbox.value

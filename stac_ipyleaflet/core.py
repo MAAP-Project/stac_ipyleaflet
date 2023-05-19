@@ -98,7 +98,7 @@ class StacIpyleaflet(Map):
         stac_btn.style.button_color = "white"
         stac_btn.tooltip = "Open/Close STAC Data Search"
         stac_btn.observe(self.toggle_stac_widget_display, type="change", names=["value"])
-        self.buttons["stac"] = stac_btn        
+        self.buttons["stac"] = stac_btn 
 
         buttons_box_layout = Layout(display='flex',
                         flex_flow='row',
