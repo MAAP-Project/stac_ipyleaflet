@@ -60,6 +60,8 @@ class StacIpyleaflet(Map):
         self.selected_data = []
         self.histogram_layer = None
         self.draw_control_added = False
+        self.aoi_coordinates = []
+        self.aoi_bbox = ()
         
         gif_file = files('stac_ipyleaflet.data').joinpath('loading.gif')
         with open(gif_file, "rb") as f:
@@ -167,14 +169,12 @@ class StacIpyleaflet(Map):
         aoi_widget.layout.overflow="auto"
 
         aoi_widget_desc = HTML(
-            value="<h4><b>AOI Coordinates</b></h4>", 
+            value="<h4><b>Drawn Polygon</b></h4>", 
         )
         aoi_html = HTML(
             value="<code>Waiting for area of interest...</code>",
             description="",
         )                
-
-        # copy_button = Button(description="Copy", icon="copy", disabled=True, laytout=Layout(padding="2px 2px"))
 
         aoi_widget.children = [aoi_widget_desc, aoi_html]
         aoi_widget.layout.display ='none'
