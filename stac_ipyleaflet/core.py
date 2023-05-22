@@ -169,7 +169,7 @@ class StacIpyleaflet(Map):
         aoi_widget.layout.overflow="auto"
 
         aoi_widget_desc = HTML(
-            value="<h4><b>Drawn Polygon</b></h4>", 
+            value="<h4><b>Polygon</b></h4>", 
         )
         aoi_html = HTML(
             value="<code>Waiting for area of interest...</code>",

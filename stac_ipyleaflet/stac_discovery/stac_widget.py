@@ -101,12 +101,14 @@ class StacDiscoveryWidget():
             style=styles["init"],
             layout=layouts["default"],
         )
+        stac_browser_url = self.stac_data["collection"]["href"].replace("https://", "https://stac-browser.maap-project.org/external/")
         collection_url_browser = HTML(
-            value=f'<a href={self.stac_data["collection"]["href"].replace("https://", "https://stac-browser.maap-project.org/external/")} target="_blank"><b>View in STAC Browser</b></a>',
+            value=f'<a href={stac_browser_url} target="_blank"><b>View in STAC Browser</b></a>',
             style=styles["init"],
             layout=layouts["default"],
         )
         collection_url.style.text_color = "blue"
+        collection_url_browser.style.text_color = "blue"
         collection_url_box = VBox(
             [
                 HTML(value="<b>URL</b>", style=styles["init"], layout=layouts["header"],),
@@ -483,7 +485,9 @@ class StacDiscoveryWidget():
             if change["new"]:
                 selected_collection = [c for c in selected_collection_options if c["id"] == collections_dropdown.value][0]
                 collection_description.value = f'<div style="{styles["desc"]}">{selected_collection["description"]}</div>'
-                collection_url.value = f'<a href={selected_collection["href"]} target="_blank">{selected_collection["href"]}'
+                collection_url.value = f'<a href={selected_collection["href"]} target="_blank">{selected_collection["href"]}</a>'
+                stac_browser_url = selected_collection["href"].replace("https://", "https://stac-browser.maap-project.org/external/")
+                collection_url_browser.value = f'<a href={stac_browser_url} target="_blank"><b>View in STAC Browser</b></a>'
                 if selected_collection["start_date"] != "":
                     collection_start_date.value = datetime.strptime(selected_collection["start_date"], "%Y-%m-%d")
                 else:
@@ -525,7 +529,8 @@ class StacDiscoveryWidget():
             selected_collection = selected_collection_options[0]
             collections_dropdown.value = selected_collection["id"]
             collection_description.value = f'<div style="{styles["desc"]}">{selected_collection["description"]}</div>'
-            collection_url.value = f'<a href={selected_collection["href"]} target="_blank">{selected_collection["href"]}'
+            collection_url.value = f'<a href={selected_collection["href"]} target="_blank">{selected_collection["href"]}</a>'
+            collection_url_browser.value = f'<a href={selected_collection["href"]} target="_blank">View in Browser</a>'
             collection_start_date.value = datetime.strptime(selected_collection["start_date"], "%Y-%m-%d")
             collection_end_date.value = datetime.strptime(selected_collection["end_date"], "%Y-%m-%d")
             items_dropdown.options = []
