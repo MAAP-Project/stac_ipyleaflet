@@ -102,12 +102,15 @@ class StacDiscoveryWidget():
             layout=layouts["default"],
         )
         stac_browser_url = self.stac_data["collection"]["href"].replace("https://", "https://stac-browser.maap-project.org/external/")
+        stac_browser_url = self.stac_data["collection"]["href"].replace("https://", "https://stac-browser.maap-project.org/external/")
         collection_url_browser = HTML(
+            value=f'<a href={stac_browser_url} target="_blank"><b>View in STAC Browser</b></a>',
             value=f'<a href={stac_browser_url} target="_blank"><b>View in STAC Browser</b></a>',
             style=styles["init"],
             layout=layouts["default"],
         )
         collection_url.style.text_color = "blue"
+        collection_url_browser.style.text_color = "blue"
         collection_url_browser.style.text_color = "blue"
         collection_url_box = VBox(
             [
