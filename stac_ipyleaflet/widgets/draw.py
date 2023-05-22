@@ -30,7 +30,7 @@ class DrawControlWidget():
                         raw_coordinates = geo_json["geometry"]["coordinates"][0]
                         def bounding_box(points):
                             x_coordinates, y_coordinates = zip(*points)
-                            return ((min(y_coordinates), min(x_coordinates)), (max(y_coordinates), max(x_coordinates)))
+                            return (min(x_coordinates), min(y_coordinates), max(x_coordinates), max(y_coordinates))
                         bbox = bounding_box(raw_coordinates)
                         main.aoi_coordinates = raw_coordinates
                         main.aoi_bbox = bbox
