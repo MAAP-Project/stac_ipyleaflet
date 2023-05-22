@@ -540,7 +540,7 @@ class StacDiscoveryWidget():
 
 
         def button_clicked(change):
-            if change["new"] == "Display":
+            if change["new"] == "Display ":
                 with output:
                     output.clear_output()
                     if not items_dropdown.value == None:
