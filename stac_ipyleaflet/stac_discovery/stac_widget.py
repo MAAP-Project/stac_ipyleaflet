@@ -1,7 +1,6 @@
 from datetime import datetime
 from ipywidgets import Box, Combobox, DatePicker, Dropdown, HBox, HTML
 from ipywidgets import Layout, Output, RadioButtons, Tab, ToggleButtons, VBox
-import json
 from pystac_client import Client
 from stac_ipyleaflet.stac_discovery.stac import Stac
 
