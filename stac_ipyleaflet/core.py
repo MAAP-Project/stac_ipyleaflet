@@ -1,7 +1,7 @@
 """Main module."""
 import csv
 from importlib.resources import files
-from ipyleaflet import Map, DrawControl, WidgetControl, TileLayer, Popup
+from ipyleaflet import Map, DrawControl, Popup, TileLayer, WidgetControl
 from IPython.display import display
 from ipywidgets import Box, HBox, VBox, Layout, SelectionSlider, HTML, IntSlider, Image
 from ipywidgets import Checkbox, Dropdown, Tab, ToggleButton, Button
@@ -89,10 +89,10 @@ class StacIpyleaflet(Map):
         layers_btn.tooltip = "Open/Close Layers Menu"
         layers_btn.observe(self.toggle_layers_widget_display, type="change", names=["value"])
         self.buttons["layers"] = layers_btn
-        histogram_btn = Button(description="Histogram", icon="bar-chart")
+        """ histogram_btn = Button(description="Histogram", icon="bar-chart")
         histogram_btn.style.text_color = "white"
         histogram_btn.style.button_color = self.accent_color
-        histogram_btn.on_click(self.create_histograms)
+        histogram_btn.on_click(self.create_histograms) """
         stac_btn = ToggleButton(description="STAC Data", icon="search", layout=main_button_layout)
         stac_btn.style.text_color = self.accent_color
         stac_btn.style.button_color = "white"
@@ -115,7 +115,7 @@ class StacIpyleaflet(Map):
 
         return None
 
-
+    #logic to handle main menu toggle buttons
     def toggle_layers_widget_display(self, b):
         if b["new"]:
             if self.layers_widget.layout.display == 'none':
@@ -175,13 +175,19 @@ class StacIpyleaflet(Map):
             value="<code>Waiting for area of interest...</code>",
             description="",
         )                
+        aoi_clear_button = Button(
+            description="Clear AOI Polygon",
+            tooltip="Clear AOI Polygon",
+            icon="trash",
+            disabled=True,
+            # layout=Layout(margin="4px 0 8px 0")
+        )
 
-        aoi_widget.children = [aoi_widget_desc, aoi_html]
+        aoi_widget.children = [aoi_widget_desc, aoi_html, aoi_clear_button]
         aoi_widget.layout.display ='none'
 
         return aoi_widget
     
-
     def create_layers_widget(self):
 
         layers_widget = Box(style= { "max-width: 420px" })        
@@ -297,19 +303,22 @@ class StacIpyleaflet(Map):
         layers_widget.children = [tab_widget]
         layers_widget.layout.display ='none'
         return layers_widget
+    
 
     def add_custom_tools(self):
         # Create custom map widgets
         self.layers_widget = self.create_layers_widget()
         self.stac_widget = StacDiscoveryWidget.template(self)
-        self.aoi_widget = self.create_aoi_widget()
+        self.aoi_widget = self.create_aoi_widget()       
 
         layers_widget = VBox([self.layers_widget])
         stac_widget = VBox([self.stac_widget])
         aoi_widget = VBox([self.aoi_widget])
+
         layers_control = WidgetControl(widget=layers_widget, position="topright", id="layers_widget")
         stack_control = WidgetControl(widget=stac_widget, position="topright", id="stac_widget")
         aoi_control = WidgetControl(widget=aoi_widget, position="topright", id="aoi_widget")
+        
         self.add(layers_control)
         self.add(stack_control)
         self.add(aoi_control)
@@ -374,7 +383,7 @@ class StacIpyleaflet(Map):
             print("Failed to add the specified TileLayer.")
             raise Exception(e)
 
-    def gen_mosaic_dataset_reader(self, assets, bounds):
+    """ def gen_mosaic_dataset_reader(self, assets, bounds):
         # see https://github.com/cogeotiff/rio-tiler/blob/main/rio_tiler/io/rasterio.py#L368-L380
         def _part_read(src_path: str, *args, **kwargs) -> ImageData:
             with Reader(src_path) as src:
@@ -397,9 +406,9 @@ class StacIpyleaflet(Map):
         # for ii, b in enumerate(img.count):
         #     h_counts, h_keys = numpy.histogram(data[b].compressed())
         #     hist[f"b{ii + 1}"] = [h_counts.tolist(), h_keys.tolist()]
-        return xr.DataArray(data)
+        return xr.DataArray(data) """
 
-    def update_selected_data(self):
+    """ def update_selected_data(self):
         layers = self.layers
         # TODO(aimee): if geometry hasn't changed and a previously selected layer is still selected, don't re-fetch it.
         self.selected_data = []
@@ -448,18 +457,18 @@ class StacIpyleaflet(Map):
                 if ds.any():
                     ds.attrs["title"] = title
                     self.selected_data.append(ds)
-        return self.selected_data
+        return self.selected_data """
 
-    def error_message(self, msg):
+    """ def error_message(self, msg):
         out = Output()
         with out:
             print(msg)
             self.gen_popup_icon(msg)
             display()
-            return
+            return """
 
     # TODO(aimee): if you try and create a histogram for more than one layer, it creates duplicates in the popup
-    def create_histograms(self, b):
+    """ def create_histograms(self, b):
         print(self, b)
         if self.histogram_layer in self.layers:
             self.remove_layer(self.histogram_layer)
@@ -498,12 +507,12 @@ class StacIpyleaflet(Map):
         self.histogram_layer = histogram_layer
         self.remove_layer(self.loading_widget_layer)
         self.add_layer(histogram_layer)
-        return None
+        return None """
  
     # generates warning/error popup
-    def gen_popup_icon(self, msg):
+    """ def gen_popup_icon(self, msg):
         warning_msg = HTML()
         warning_msg.value=f"<b>{msg}</b>"
         popup_warning = Popup(location=self.bbox_centroid or self.center, draggable=True, child=warning_msg)
         self.warning_layer=popup_warning
-        self.add_layer(popup_warning);
+        self.add_layer(popup_warning) """
