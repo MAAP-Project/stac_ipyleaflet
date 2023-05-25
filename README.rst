@@ -20,7 +20,7 @@ ipyleaflet customized for discovering, visualizing and interacting with STAC and
 
 
 * Free software: MIT license
-* Documentation: https://stac-ipyleaflet.readthedocs.io.
+* Documentation: https://docs.maap-project.org/en/latest/technical_tutorials/visualization/stac_ipyleaflet.html.
 
 
 Features

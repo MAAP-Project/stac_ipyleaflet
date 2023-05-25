@@ -3,6 +3,7 @@ include HISTORY.rst
 include LICENSE
 include README.rst
 include stac_ipyleaflet/data/*
+include stac_ipyleaflet/widgets/*
 include stac_ipyleaflet/stac_discovery/catalogs/*
 
 recursive-include tests *
