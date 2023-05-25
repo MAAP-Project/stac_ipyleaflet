@@ -55,7 +55,8 @@ class StacDiscoveryWidget():
         self.stac_data = { 
             "catalog": selected_catalog,
             "collection": selected_collection,
-            "items": []           
+            "items": [],
+            "layer_added": False
         }
 
         # STAC Widget Items
@@ -72,7 +73,6 @@ class StacDiscoveryWidget():
                 catalogs_dropdown
             ]
         )
-
         collections_dropdown = Dropdown(
             options=[c["id"] for c in selected_collection_options],
             value=self.stac_data["collection"]["id"],
@@ -135,6 +135,7 @@ class StacDiscoveryWidget():
                 HBox([collection_start_date, collection_end_date])
             ]
         )
+        defaultItemsDropdownText = "Select an Item"
         items_dropdown = Dropdown(
             options=[],
             value=None,
@@ -359,7 +360,7 @@ class StacDiscoveryWidget():
                 data_asset = assets[asset]
                 self.stac_data["data_href"] = data_asset.get_absolute_href() 
                 data_types = data_asset.media_type
-                print(f"{asset} data type:", data_types)    
+                # print(f"{asset} data type:", data_types)    
                 if "application=geotiff" in data_types and "profile=cloud-optimized" in data_types:
                     is_displayable = True                                            
                 # if "statistics" in metadata:
@@ -432,11 +433,14 @@ class StacDiscoveryWidget():
                     )
                     result_items = list(collection_items.values())
                     self.stac_data["items"] = result_items
-                    options = list(collection_items.keys())
-                    if len(options) > 0:
-                        items_dropdown.options = options
-                        output.clear_output()
-                        print(f"{len(options)} items were found - please select 1 to determine if it can be displayed.")                        
+                    items = list(collection_items.keys())      
+                    default = [defaultItemsDropdownText] 
+                    if len(items) > 0:
+                        options = [*default, *items]                        
+                        items_dropdown.options = options   
+                        items_dropdown.value = options[0]                     
+                        output.clear_output()                        
+                        print(f"{len(items)} items were found - please select 1 to determine if it can be displayed.")                        
                     else:
                         output.clear_output()
                         print("No items were found within this Collection. Please select another.")
@@ -481,22 +485,12 @@ class StacDiscoveryWidget():
                     collection_end_date.value = None
                 self.stac_data["collection"] = selected_collection
                 query_collection_items(selected_collection)
-                # raster_options.children = []
-
-                # with output:
-                #     output.clear_output()
-                #     print(selected_collection)
 
         collections_dropdown.observe(collection_changed, names="value")
     
-        def items_changed(change):
-            if change["new"]:
+        def items_changed(change):            
+            if change["new"] and change["new"] != defaultItemsDropdownText:                
                 prep_data_display_settings()
-                # if not singular_band.options:
-                #     with output:
-                #         print("This item cannot displayed. Only Cloud-Optimized GeoTIFFs are supported at this time.")
-                # vmin.value = ""
-                # vmax.value = ""
 
         items_dropdown.observe(items_changed, names="value")
 
@@ -526,7 +520,7 @@ class StacDiscoveryWidget():
             if change["new"] == "Display ":
                 with output:
                     output.clear_output()
-                    if not items_dropdown.value == None:
+                    if not items_dropdown.value == defaultItemsDropdownText:
                         print(f"Loading data for {items_dropdown.value}...")
                         # if (
                         #     checkbox.value
@@ -573,8 +567,11 @@ class StacDiscoveryWidget():
                                     bounds = []
 
                                 tile_url = self.stac_data["tiles_url"]
-                                self.layers = self.layers[:len(self.layers)-1]
+                                if self.stac_data["layer_added"] == True:
+                                    self.layers = self.layers[:len(self.layers)-1]
+                                    self.stac_data["layer_added"] = False
                                 self.add_tile_layer(url=tile_url, name=items_dropdown.value, attribution=items_dropdown.value)
+                                self.stac_data["layer_added"] = True
                                 if len(bounds) > 0:
                                     self.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
                                 output.clear_output()
