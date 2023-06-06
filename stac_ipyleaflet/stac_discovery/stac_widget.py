@@ -352,15 +352,14 @@ class StacDiscoveryWidget():
         ]
     
         def handle_stac_layer_opacity(change):
-            selected_layer = change.owner.description
-            print(selected_layer)
             if self.stac_data["layer_added"] == True:
-                l = self.layers[-1]
-                l.opacity = change["new"]             
+                l = self.find_layer(items_dropdown.value)
+                if l.name:
+                    l.opacity = change["new"]             
 
         def prep_data_display_settings():
             is_displayable = False
-            
+            stac_opacity_slider.disabled = True
             assets = [i for i in self.stac_data["items"] if i["id"] == items_dropdown.value][0]["assets"]
             item_href = [i for i in self.stac_data["items"] if i["id"] == items_dropdown.value][0]["href"]
             metadata = Stac.get_item_info(url=item_href)
@@ -378,7 +377,7 @@ class StacDiscoveryWidget():
                 data_types = data_asset.media_type
                 # print(f"{asset} data type:", data_types)    
                 if "application=geotiff" in data_types and "profile=cloud-optimized" in data_types:
-                    is_displayable = True                                            
+                    is_displayable = True                                    
                 # if "statistics" in metadata:
                 #     minv, maxv = metadata["statistics"]["1"]["min"], metadata["statistics"]["1"]["max"]
                 #     print("MIN/MAX", minv, maxv)
@@ -407,6 +406,8 @@ class StacDiscoveryWidget():
                     output.clear_output()
                     print("Item is ready for display.")    
             else:
+                stac_buttons.disabled = True
+                stac_opacity_slider.disabled = True
                 with output:
                     output.clear_output()
                     print("This item cannot displayed. Only Cloud-Optimized GeoTIFFs are supported at this time.")
@@ -531,6 +532,9 @@ class StacDiscoveryWidget():
             # palette.value = None
             # raster_options.children = [] """
 
+        def reset_stac_opacity_slider():
+            stac_opacity_slider.value = 1
+            stac_opacity_slider.disabled = False
 
         def button_clicked(change):
             if change["new"] == "Display ":
@@ -589,6 +593,7 @@ class StacDiscoveryWidget():
                                 self.add_tile_layer(url=tile_url, name=items_dropdown.value, attribution=items_dropdown.value)
                                 stac_opacity_slider.observe(handle_stac_layer_opacity, names="value")
                                 self.stac_data["layer_added"] = True
+                                reset_stac_opacity_slider()
                                 if len(bounds) > 0:
                                     self.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
                                 output.clear_output()
