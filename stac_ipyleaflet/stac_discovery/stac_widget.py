@@ -308,7 +308,7 @@ class StacDiscoveryWidget():
         stac_opacity_slider = SelectionSlider(
             value=1,
             options=[("%g"%i, i/100) for i in opacity_values],
-            description="STAC Layer",
+            description="% Opacity:",
             continuous_update=False,
             orientation='horizontal',
             layout=Layout(margin="-12px 0 4px 0")
