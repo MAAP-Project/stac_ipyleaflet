@@ -126,6 +126,7 @@ class StacIpyleaflet(Map):
                 self.buttons["draw"].value = False
                 if self.draw_control_added:
                     self.remove(self.draw_control)
+                    self.draw_control_added = False
         if not b["new"]:
             if self.layers_widget.layout.display == 'block':
                 self.layers_widget.layout.display = 'none'
@@ -140,6 +141,7 @@ class StacIpyleaflet(Map):
                 self.buttons["draw"].value = False
                 if self.draw_control_added:
                     self.remove(self.draw_control)
+                    self.draw_control_added = False
         if not b["new"]:
             if self.stac_widget.layout.display == 'block':
                 self.stac_widget.layout.display = 'none'
