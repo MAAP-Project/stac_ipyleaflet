@@ -1,7 +1,9 @@
 # STAC ipyleaflet
 
 ### What
-stac_ipyleaflet is a customized version of [ipyleaflet](https://ipyleaflet.readthedocs.io/en/latest/) built to be an in jupyter-notebook interactive mapping library that can access STAC catalogs (currently only the MAAP STAC) to help better visualize cloud-optimized geotiffs. The library provides widgets that is meant to help users working in Jupyter Notebook environments to quickly visualize and interact with geospatial data at different stages throughout their process.
+stac_ipyleaflet is a customized version of [ipyleaflet](https://ipyleaflet.readthedocs.io/en/latest/) built to be an in-jupyter-notebook interactive mapping library that prioritizes access to STAC catalog data. The library provides ([ipywidgets](https://ipywidgets.readthedocs.io/en/stable/)-based) components that are meant to help users working in Jupyter Notebook environments to quickly visualize and interact with geospatial data at different stages throughout their research process.
+
+The intended users of this library are members of the scientific community who are doing research in areas like climate and active remote sensing. While they can write code to visualize and analyze data, they find it time consuming and may end up exporting results to visualize/explore data in & out of a jupyter notebook. This library allows them to visualize remotely sensed data as quickly as possible at scale as fast as possible right in the notebook. It does not replace full featured GIS tools but offers enough visualization capabilities to support their scientific analysis cycles.
 
 ### Why
 While the intended users of this library are technical and can write code on their own to plot and analyze data, it's very time consuming to export results and visualize/explore data in & out of a jupyter notebook. So this library helps users visualize remotely sensed data as quickly as possible at scale as fast as possible.
@@ -22,9 +24,9 @@ Much of this project is inspired from [leafmap](https://leafmap.org/)
 
 ## Contributing
 @TODO - decide and finalize on git conventions like branching standards also testing coverage
-To contribute to this codebase, clone this repository down and create a new branch. All PRs should be against the `main` branch. Branch names should be prefixed with either *feature, bugfix, docs, refactor*. 
+To contribute to this codebase, clone this repository down and create a new branch. All PRs should be against the `main` branch. Branch names should be prefixed with either *feature, bugfix, docs, refactor* and be in kebab-case format.
 
-For example when adding documentation, the branch name should look something like `docs/{special_branch_name}`. Or when refactoring for code optimization, the branch name should look something like `refactor/{special_branch_name}`
+For example when adding documentation, the branch name should look something like `docs/{special-branch-name}`. Or when refactoring for code optimization, the branch name should look something like `refactor/{special-branch-name}`
 
 ## Additional requirements
 
@@ -58,10 +60,6 @@ jupyter lab
 ```
 
 Note this library currently includes `rio.open` so must be run with an AWS identity that has access to the bucket the biomass products are in.
-
-## Links
-* [MAAP Visualization Discovery Report](https://docs.google.com/presentation/d/1Oz2Uh-jYEvPQlEgym8l6k45LvqqqdLwGy3atrZkLhJg/edit#slide=id.p1)
-
 
 **Styling Notes**
 - By default, ipywidget icons can be set to any from the font-awesome library v4: https://fontawesome.com/v4/icons/
