@@ -3,10 +3,8 @@
 ### What
 stac_ipyleaflet is a customized version of [ipyleaflet](https://ipyleaflet.readthedocs.io/en/latest/) built to be an in-jupyter-notebook interactive mapping library that prioritizes access to STAC catalog data. The library provides ([ipywidgets](https://ipywidgets.readthedocs.io/en/stable/)-based) components that are meant to help users working in Jupyter Notebook environments to quickly visualize and interact with geospatial data at different stages throughout their research process.
 
-The intended users of this library are members of the scientific community who are doing research in areas like climate and active remote sensing. While they can write code to visualize and analyze data, they find it time consuming and may end up exporting results to visualize/explore data in & out of a jupyter notebook. This library allows them to visualize remotely sensed data as quickly as possible at scale as fast as possible right in the notebook. It does not replace full featured GIS tools but offers enough visualization capabilities to support their scientific analysis cycles.
-
 ### Why
-While the intended users of this library are technical and can write code on their own to plot and analyze data, it's very time consuming to export results and visualize/explore data in & out of a jupyter notebook. So this library helps users visualize remotely sensed data as quickly as possible at scale as fast as possible.
+The intended users of this library are members of the scientific community who are doing research in areas like climate and active remote sensing. While they can write code to visualize and analyze data, they find it time consuming and may end up exporting results to visualize/explore data in & out of a jupyter notebook. This library allows them to visualize remotely sensed data as quickly as possible at scale as fast as possible right in the notebook. It does not replace full featured GIS tools but offers enough visualization capabilities to support their scientific analysis cycles.
 
 ![stac_ipyleaflet as part of the explore/visualization solution](/public/images/about-map-visualization-solution.png)
 > stac_ipyleaflet as part of the explore/visualization solution
