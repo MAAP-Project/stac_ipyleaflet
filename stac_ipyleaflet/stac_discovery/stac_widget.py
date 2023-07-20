@@ -49,7 +49,7 @@ class StacDiscoveryWidget():
             cat["collections"] = collections
         if "collections" not in selected_catalog:
             print("COLLECTIONS NOT FOUND")
-            return
+            return None
         # else:
         selected_collection_options = sorted([c for c in selected_catalog["collections"]], key=lambda c: c["id"])
         selected_collection = selected_collection_options[0]

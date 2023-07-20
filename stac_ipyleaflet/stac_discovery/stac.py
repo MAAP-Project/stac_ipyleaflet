@@ -66,7 +66,7 @@ class Stac():
             except Exception as err:
                 error = {'error': err, 'collection': collection}
                 logging.error(error)
-                return
+                return None
         if len(output_collections) > 0:
             output_collections.sort(key= lambda x:x['title'])
         return output_collections
@@ -333,8 +333,8 @@ class Stac():
         Returns:
             str: Returns the STAC Tile layer URL.
         """
-        if url is None and collection is None: # QUESTION: should this be an "and" or "or" given error statement ?
-            raise ValueError("Either url or collection must be specified. stac_tile")
+        if url is None and collection is None:
+            raise ValueError("url and collection must be specified. stac_tile")
 
         kwargs["rescale"] = RESCALE
 

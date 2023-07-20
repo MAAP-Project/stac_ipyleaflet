@@ -7,13 +7,9 @@ from ipywidgets import Box, HBox, VBox, Layout, SelectionSlider, HTML, IntSlider
 from ipywidgets import Checkbox, Dropdown, Tab, ToggleButton, Button
 from ipywidgets import HTML, Output, jslink
 import matplotlib.pyplot as plt
-# import numpy
-# import re
-# import requests
 from rio_tiler.io import Reader
 from rio_tiler.mosaic import mosaic_reader
 from rio_tiler.models import ImageData
-# import rioxarray
 from shapely.geometry import Polygon
 import xarray as xr
 import logging
@@ -117,7 +113,7 @@ class StacIpyleaflet(Map):
         self.add_custom_tools()
         self.draw_control = DrawControlWidget.template(self)
 
-        return
+        return None
 
     #logic to handle main menu toggle buttons
     def toggle_layers_widget_display(self, b):
@@ -278,7 +274,7 @@ class StacIpyleaflet(Map):
                                         l.visible = True        
                                     else:
                                         l.visible = False
-                            return
+                            return None
                 dropdown = Dropdown(options=basemaps, value="Open Street Map")         
                 self.basemap_selection_dd = dropdown       
                 dropdown.observe(on_change)
@@ -344,7 +340,7 @@ class StacIpyleaflet(Map):
         for layer in layers:
             if layer.name == name:
                 return layer
-        return
+        return None
 
     def add_layer(self, layer):
         existing_layer = self.find_layer(layer.name)

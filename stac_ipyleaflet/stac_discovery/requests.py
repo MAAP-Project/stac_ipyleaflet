@@ -17,4 +17,4 @@ def make_get_request(url, params=None, timeout=REQUEST_TIMEOUT):
         logging.error(f"timeout raised during get request")
     except requests.exceptions.RequestException as e:
         logging.error(e)
-    return
+    return None
