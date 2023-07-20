@@ -1,8 +1,20 @@
 # [SOME] code taken from https://github.com/giswqs/leafmap/blob/master/leafmap/stac.py
 from pystac_client import ItemSearch
-from stac_ipyleaflet.stac_discovery.types import CollectionObj
 from stac_ipyleaflet.stac_discovery.requests import make_get_request
+from stac_ipyleaflet.constants import RESCALE
+from typing import TypedDict, Optional
 import logging
+
+class OutputCollectionObj(TypedDict):
+    id: str
+    title: str
+    start_date: str
+    end_date: str
+    bbox: str
+    metadata: Optional[str]
+    href: Optional[str]
+    description: str
+    license: str
 
 class Stac():
 
@@ -49,12 +61,12 @@ class Stac():
                 )
 
                 license = data["license"]
-                collection_obj: CollectionObj = CollectionObj({'id': id, 'title': title, 'start_date': start_date, 'end_date': end_date, 'bbox': bbox, 'metadata': metadata, 'href': href, 'description': description, 'license': license})
+                collection_obj = OutputCollectionObj({'id': id, 'title': title, 'start_date': start_date, 'end_date': end_date, 'bbox': bbox, 'metadata': metadata, 'href': href, 'description': description, 'license': license})
                 output_collections.append(collection_obj)
             except Exception as err:
                 error = {'error': err, 'collection': collection}
                 logging.error(error)
-                return None
+                return
         if len(output_collections) > 0:
             output_collections.sort(key= lambda x:x['title'])
         return output_collections
@@ -100,7 +112,7 @@ class Stac():
         if url is None and collection is None:
             raise ValueError("Either url or collection must be specified. stac_tile")
 
-        kwargs["rescale"] = "0,50"
+        kwargs["rescale"] = RESCALE
 
         if url is not None:
             kwargs["url"] = url
@@ -321,10 +333,10 @@ class Stac():
         Returns:
             str: Returns the STAC Tile layer URL.
         """
-        if url is None and collection is None:
+        if url is None and collection is None: # QUESTION: should this be an "and" or "or" given error statement ?
             raise ValueError("Either url or collection must be specified. stac_tile")
 
-        kwargs["rescale"] = "0,50"
+        kwargs["rescale"] = RESCALE
 
         if url is not None:
             kwargs["url"] = url

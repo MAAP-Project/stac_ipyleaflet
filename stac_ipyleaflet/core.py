@@ -7,19 +7,21 @@ from ipywidgets import Box, HBox, VBox, Layout, SelectionSlider, HTML, IntSlider
 from ipywidgets import Checkbox, Dropdown, Tab, ToggleButton, Button
 from ipywidgets import HTML, Output, jslink
 import matplotlib.pyplot as plt
-import numpy
-import re
-import requests
+# import numpy
+# import re
+# import requests
 from rio_tiler.io import Reader
 from rio_tiler.mosaic import mosaic_reader
 from rio_tiler.models import ImageData
-import rioxarray
+# import rioxarray
 from shapely.geometry import Polygon
 import xarray as xr
+import logging
 
 from stac_ipyleaflet.stac_discovery.stac_widget import StacDiscoveryWidget
 from stac_ipyleaflet.widgets.basemaps import BasemapsWidget
 from stac_ipyleaflet.widgets.draw import DrawControlWidget
+from stac_ipyleaflet.constants import TITILER_ENDPOINT, TITILER_STAC_ENDPOINT
 
 class StacIpyleaflet(Map):
     """
@@ -34,8 +36,8 @@ class StacIpyleaflet(Map):
     loading_widget_layer: Popup = None
     bbox_centroid: list = []
 
-    titiler_endpoint = "https://titiler.maap-project.org"
-    titiler_stac_endpoint = "https://titiler-stac.maap-project.org"
+    titiler_endpoint = TITILER_ENDPOINT
+    titiler_stac_endpoint = TITILER_STAC_ENDPOINT
 
     def __init__(self, **kwargs):
         if "center" not in kwargs:
@@ -83,6 +85,7 @@ class StacIpyleaflet(Map):
         draw_btn.tooltip = "Draw Area of Interest"
         draw_btn.observe(self.toggle_draw_widget_display, type="change", names=["value"])
         self.buttons["draw"] = draw_btn
+
         layers_btn = ToggleButton(description="Layers", icon="map-o", layout=main_button_layout)
         layers_btn.style.text_color = self.accent_color
         layers_btn.style.button_color = "transparent"
@@ -93,6 +96,7 @@ class StacIpyleaflet(Map):
         histogram_btn.style.text_color = "white"
         histogram_btn.style.button_color = self.accent_color
         histogram_btn.on_click(self.create_histograms) """
+
         stac_btn = ToggleButton(description="STAC Data", icon="search", layout=main_button_layout)
         stac_btn.style.text_color = self.accent_color
         stac_btn.style.button_color = "white"
@@ -113,7 +117,7 @@ class StacIpyleaflet(Map):
         self.add_custom_tools()
         self.draw_control = DrawControlWidget.template(self)
 
-        return None
+        return
 
     #logic to handle main menu toggle buttons
     def toggle_layers_widget_display(self, b):
@@ -191,7 +195,6 @@ class StacIpyleaflet(Map):
         return aoi_widget
     
     def create_layers_widget(self):
-
         layers_widget = Box(style= { "max-width: 420px" })        
         layers_widget.layout.flex_flow="column"
         layers_widget.layout.max_height="360px"
@@ -341,7 +344,7 @@ class StacIpyleaflet(Map):
         for layer in layers:
             if layer.name == name:
                 return layer
-        return None
+        return
 
     def add_layer(self, layer):
         existing_layer = self.find_layer(layer.name)
@@ -382,7 +385,7 @@ class StacIpyleaflet(Map):
             self.add_layer(tile_layer)
 
         except Exception as e:
-            print("Failed to add the specified TileLayer.")
+            logging.error("Failed to add the specified TileLayer.")
             raise Exception(e)
 
     """ def gen_mosaic_dataset_reader(self, assets, bounds):
