@@ -6,18 +6,18 @@ from IPython.display import display
 from ipywidgets import Box, HBox, VBox, Layout, SelectionSlider, HTML, IntSlider, Image
 from ipywidgets import Checkbox, Dropdown, Tab, ToggleButton, Button
 from ipywidgets import HTML, Output, jslink
+import logging
 import matplotlib.pyplot as plt
 from rio_tiler.io import Reader
 from rio_tiler.mosaic import mosaic_reader
 from rio_tiler.models import ImageData
 from shapely.geometry import Polygon
 import xarray as xr
-import logging
 
+from stac_ipyleaflet.constants import TITILER_ENDPOINT, TITILER_STAC_ENDPOINT
 from stac_ipyleaflet.stac_discovery.stac_widget import StacDiscoveryWidget
 from stac_ipyleaflet.widgets.basemaps import BasemapsWidget
 from stac_ipyleaflet.widgets.draw import DrawControlWidget
-from stac_ipyleaflet.constants import TITILER_ENDPOINT, TITILER_STAC_ENDPOINT
 
 class StacIpyleaflet(Map):
     """

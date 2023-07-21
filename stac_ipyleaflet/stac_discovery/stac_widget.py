@@ -2,8 +2,8 @@ from datetime import datetime
 from ipywidgets import Box, DatePicker, Dropdown, HBox, HTML
 from ipywidgets import Layout, Output, RadioButtons, SelectionSlider, Tab, ToggleButtons, VBox
 from pystac_client import Client
-from stac_ipyleaflet.stac_discovery.stac import Stac
 from stac_ipyleaflet.constants import TITILER_ENDPOINT
+from stac_ipyleaflet.stac_discovery.stac import Stac
 
 class StacDiscoveryWidget():
     def template(self) -> Box( style={"max_height: 200px"}):

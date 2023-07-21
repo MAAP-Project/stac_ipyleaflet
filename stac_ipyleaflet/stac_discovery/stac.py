@@ -1,9 +1,9 @@
 # [SOME] code taken from https://github.com/giswqs/leafmap/blob/master/leafmap/stac.py
+import logging
 from pystac_client import ItemSearch
 from stac_ipyleaflet.stac_discovery.requests import make_get_request
 from stac_ipyleaflet.constants import RESCALE
 from typing import TypedDict, Optional
-import logging
 
 class OutputCollectionObj(TypedDict):
     id: str
