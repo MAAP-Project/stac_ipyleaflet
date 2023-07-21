@@ -2,12 +2,12 @@ from datetime import datetime
 from ipywidgets import Box, DatePicker, Dropdown, HBox, HTML
 from ipywidgets import Layout, Output, RadioButtons, SelectionSlider, Tab, ToggleButtons, VBox
 from pystac_client import Client
+from stac_ipyleaflet.constants import TITILER_ENDPOINT
 from stac_ipyleaflet.stac_discovery.stac import Stac
 
 class StacDiscoveryWidget():
     def template(self) -> Box( style={"max_height: 200px"}):
         opacity_values = [i*10 for i in range(10+1)]  # [0.001, 0.002, ...]
-        titiler_stac_endpoint = "https://titiler.maap-project.org"
         standard_width = "440px"
         styles = {
             "init": {"description_width": "initial",},
@@ -49,7 +49,7 @@ class StacDiscoveryWidget():
             cat["collections"] = collections
         if "collections" not in selected_catalog:
             print("COLLECTIONS NOT FOUND")
-            return
+            return None
         # else:
         selected_collection_options = sorted([c for c in selected_catalog["collections"]], key=lambda c: c["id"])
         selected_collection = selected_collection_options[0]
@@ -571,7 +571,7 @@ class StacDiscoveryWidget():
                             item=items_dropdown.value,
                             assets=assets,
                             palette=vis_params["colormap_name"],
-                            titiler_stac_endpoint=titiler_stac_endpoint
+                            titiler_stac_endpoint=TITILER_ENDPOINT
                         )
                         print("stac url:", stac_url)
                         if "tiles" in stac_url:

@@ -1,59 +1,77 @@
 # [SOME] code taken from https://github.com/giswqs/leafmap/blob/master/leafmap/stac.py
+import logging
 from pystac_client import ItemSearch
-import requests
+from stac_ipyleaflet.stac_discovery.requests import make_get_request
+from stac_ipyleaflet.constants import RESCALE
+from typing import TypedDict, Optional
+
+class OutputCollectionObj(TypedDict):
+    id: str
+    title: str
+    start_date: str
+    end_date: str
+    bbox: str
+    metadata: Optional[str]
+    href: Optional[str]
+    description: str
+    license: str
 
 class Stac():
 
+    @staticmethod
     def organize_collections(collections=[]):
         output_collections = []
-        # print(type(collections), collections)
         for collection in collections:
             try:
                 data = collection.to_dict()
-                # print(data)
-                collection_obj = {}
-                collection_obj["id"] = data["id"].strip()
-                collection_obj["title"] = data["title"].strip()
+                id = data["id"].strip()
+                title = data["title"].strip()
 
                 start_date = data["extent"]["temporal"]["interval"][0][0]
                 end_date = data["extent"]["temporal"]["interval"][0][1]
 
                 if start_date is not None:
-                    collection_obj["start_date"] = start_date.split("T")[0]
+                    start_date = start_date.split("T")[0]
                 else:
-                    collection_obj["start_date"] = ""
+                    start_date = ""
 
                 if end_date is not None:
-                    collection_obj["end_date"] = end_date.split("T")[0]
+                    end_date = end_date.split("T")[0]
                 else:
-                    collection_obj["end_date"] = ""
-                collection_obj["bbox"] = ", ".join(
+                    end_date = ""
+
+                bbox = ", ".join(
                     [str(coord) for coord in data["extent"]["spatial"]["bbox"][0]]
                 )
 
+                metadata = None
+                href = None
                 for l in data["links"]:
                     if l["rel"] == "about":
-                        collection_obj["metadata"] = l["href"]
+                        metadata = l["href"]
                     if l["rel"] == "self":
-                        collection_obj["href"] = l["href"]
+                        href = l["href"]
 
-                collection_obj["description"] = (
+                description = (
                     data["description"]
                     .replace("\n", " ")
                     .replace("\r", " ")
                     .replace("\\u", " ")
                     .replace("                 ", " ")
                 )
-                collection_obj["license"] = data["license"]
+
+                license = data["license"]
+                collection_obj = OutputCollectionObj({'id': id, 'title': title, 'start_date': start_date, 'end_date': end_date, 'bbox': bbox, 'metadata': metadata, 'href': href, 'description': description, 'license': license})
                 output_collections.append(collection_obj)
             except Exception as err:
-                print("Error: ", collection)
-                print(err)
+                error = {'error': err, 'collection': collection}
+                logging.error(error)
                 return None
         if len(output_collections) > 0:
             output_collections.sort(key= lambda x:x['title'])
         return output_collections
 
+    @staticmethod
     def get_item_info(url=None, **kwargs):
         """Get INFO of a single SpatialTemporal Asset Catalog (STAC) **COG** item.
         Args:
@@ -65,11 +83,12 @@ class Stac():
             raise ValueError("Item url must be specified to get stac_bands")
 
         if isinstance(url, str):
-            r = requests.get(f"{url}", ).json()
+            r = make_get_request(url).json()
             
         return r
     
 
+    @staticmethod
     def stac_tile(
         url=None,
         collection=None,
@@ -93,7 +112,7 @@ class Stac():
         if url is None and collection is None:
             raise ValueError("Either url or collection must be specified. stac_tile")
 
-        kwargs["rescale"] = "0,50"
+        kwargs["rescale"] = RESCALE
 
         if url is not None:
             kwargs["url"] = url
@@ -125,14 +144,12 @@ class Stac():
             kwargs.pop("TileMatrixSetId")
 
         if isinstance(titiler_stac_endpoint, str):
-            r = requests.get(
-                f"{titiler_stac_endpoint}/stac/{TileMatrixSetId}/tilejson.json",
-                params=kwargs,
-            ).json()
+            r = make_get_request(f"{titiler_stac_endpoint}/stac/{TileMatrixSetId}/tilejson.json", kwargs).json()
         else:
-            r = requests.get(titiler_stac_endpoint.url_for_stac_item(), params=kwargs).json()
+            r = make_get_request(titiler_stac_endpoint.url_for_stac_item(), kwargs).json()
         return r["tiles"][0]
 
+    @staticmethod
     def stac_bounds(url=None, collection=None, item=None, titiler_stac_endpoint=None, **kwargs):
         """Get the bounding box of a single SpatialTemporal Asset Catalog (STAC) item.
         Args:
@@ -154,13 +171,14 @@ class Stac():
             kwargs["item"] = item
 
         if isinstance(titiler_stac_endpoint, str):
-            r = requests.get(f"{titiler_stac_endpoint}/stac/bounds", params=kwargs).json()
+            r = make_get_request(f"{titiler_stac_endpoint}/stac/bounds", kwargs).json()
         else:
-            r = requests.get(titiler_stac_endpoint.url_for_stac_bounds(), params=kwargs).json()
+            r = make_get_request(titiler_stac_endpoint.url_for_stac_bounds(), kwargs).json()
 
         bounds = r["bounds"]
         return bounds
 
+    # QUESTION: Is this being or planning to be used? 
     def add_stac_layer(
         self,
         url=None,
@@ -169,10 +187,10 @@ class Stac():
         assets=None,
         bands=None,
         titiler_stac_endpoint=None,
-        name="STAC Layer",
-        attribution="",
-        opacity=1.0,
-        shown=True,
+        # name="STAC Layer",
+        # attribution="",
+        # opacity=1.0,
+        # shown=True,
         **kwargs,
     ):
         """Adds a STAC TileLayer to the map.
@@ -192,28 +210,29 @@ class Stac():
             url, collection, item, assets, bands, titiler_stac_endpoint, **kwargs
         )
         return tile_url
-        bounds = Stac.stac_bounds(url, collection, item, titiler_stac_endpoint)
-        self.add_tile_layer(tile_url, name, attribution, opacity, shown)
-        self.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+        # bounds = Stac.stac_bounds(url, collection, item, titiler_stac_endpoint)
+        # self.add_tile_layer(tile_url, name, attribution, opacity, shown)
+        # self.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
 
-        if not hasattr(self, "cog_layer_dict"):
-            self.cog_layer_dict = {}
+        # if not hasattr(self, "cog_layer_dict"):
+        #     self.cog_layer_dict = {}
 
-        if assets is None and bands is not None:
-            assets = bands
+        # if assets is None and bands is not None:
+        #     assets = bands
 
-        params = {
-            "url": url,
-            "collection": collection,
-            "item": item,
-            "assets": assets,
-            "bounds": bounds,
-            "titiler_stac_endpoint": self.titiler_stac_endpoint,
-            "type": "STAC",
-        }
+        # params = {
+        #     "url": url,
+        #     "collection": collection,
+        #     "item": item,
+        #     "assets": assets,
+        #     "bounds": bounds,
+        #     "titiler_stac_endpoint": self.titiler_stac_endpoint,
+        #     "type": "STAC",
+        # }
 
-        self.cog_layer_dict[name] = params
+        # self.cog_layer_dict[name] = params
 
+    @staticmethod
     def set_default_bands(bands):
         if len(bands) == 0:
             return [None]
@@ -227,6 +246,7 @@ class Stac():
         if not isinstance(bands, list):
             raise ValueError("bands must be a list or a string.")
 
+    @staticmethod
     def stac_search(
         url,
         method="GET",
@@ -270,7 +290,8 @@ class Stac():
             return info
         else:
             return search
-        
+    
+    @staticmethod
     def get_metadata(   
         data_type="cog",
         titiler_stac_endpoint=None,
@@ -284,11 +305,12 @@ class Stac():
             kwargs["max_size"] = max_size
 
         if isinstance(titiler_stac_endpoint, str):
-            r = requests.get(f"{titiler_stac_endpoint}/{data_type}/metadata", params=kwargs).json()
+            r = make_get_request(f"{titiler_stac_endpoint}/{data_type}/metadata", kwargs).json()
             return r
         else:
             return "Cannot process request: titiler stac endpoint not provided."
 
+    @staticmethod
     def get_tile_url(
         data_type="cog",
         url=None,
@@ -312,9 +334,9 @@ class Stac():
             str: Returns the STAC Tile layer URL.
         """
         if url is None and collection is None:
-            raise ValueError("Either url or collection must be specified. stac_tile")
+            raise ValueError("url and collection must be specified. stac_tile")
 
-        kwargs["rescale"] = "0,50"
+        kwargs["rescale"] = RESCALE
 
         if url is not None:
             kwargs["url"] = url
@@ -347,10 +369,7 @@ class Stac():
             kwargs.pop("TileMatrixSetId")
 
         if isinstance(titiler_stac_endpoint, str):
-            r = requests.get(
-                f"{titiler_stac_endpoint}/{data_type}/{TileMatrixSetId}/tilejson.json",
-                params=kwargs,
-            ).json()
+            r = make_get_request(f"{titiler_stac_endpoint}/{data_type}/{TileMatrixSetId}/tilejson.json", kwargs).json()
             return r
         else:
             return "STAC ENDPOINT IS NECESSARY."

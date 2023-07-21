@@ -22,7 +22,7 @@ Much of this project is inspired from [leafmap](https://leafmap.org/)
 
 ## Contributing
 @TODO - decide and finalize on git conventions like branching standards also testing coverage
-To contribute to this codebase, clone this repository down and create a new branch. All PRs should be against the `main` branch. Branch names should be prefixed with either *feature, bugfix, docs, refactor* and be in kebab-case format.
+To contribute to this codebase, clone this repository down and create a new branch. All PRs should be against the `main` branch. Branch names should be prefixed with either *feature, bugfix, docs, refactor, cleanup* and be in kebab-case format.
 
 For example when adding documentation, the branch name should look something like `docs/{special-branch-name}`. Or when refactoring for code optimization, the branch name should look something like `refactor/{special-branch-name}`
 
