@@ -9,17 +9,6 @@
 ### Fixes or Addresses Issue \#: [ticket number & link]
 
 
-
-## Type of change:
-
-_Please delete options that are not relevant._
-
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] This change requires a documentation update
-
-
 ## Checklist before requesting a review:
 - [ ] My code follows the guidelines of this project
 - [ ] I  performed a self-review of my code changes
