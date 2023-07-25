@@ -79,7 +79,7 @@ class StacDiscoveryWidget:
             collections_object = stac_client.get_all_collections()
             collections = Stac.organize_collections(collections_object)
             cat["collections"] = collections
-
+        # set default catalog based on name
         selected_catalog = [cat for cat in stac_catalogs if "MAAP" in cat["name"]][0]
 
         if "collections" not in selected_catalog:
@@ -89,6 +89,7 @@ class StacDiscoveryWidget:
             value=True, layout=layouts["checkbox"], indent=False
         )
 
+        # available collections have been tagged as `has_cog: True` when reviewing item_assets
         def get_available_collections(catalog):
             if collections_filter_checkbox.value:
                 return sorted(
@@ -670,6 +671,7 @@ class StacDiscoveryWidget:
                     output.clear_output()
                     print("COLLECTION QUERY ERROR", err)
 
+        # sets and refreshes which collections are set based on selected catalog
         def set_collection_options():
             selected_catalog = [
                 cat for cat in stac_catalogs if cat["name"] == catalogs_dropdown.value

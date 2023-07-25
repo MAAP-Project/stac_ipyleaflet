@@ -28,6 +28,7 @@ class Stac:
                 data = collection.to_dict()
 
                 has_cog = False
+                # determine if collection has compatible items by looking to its item_assets property
                 if data["item_assets"]:
                     has_cog = True
 
