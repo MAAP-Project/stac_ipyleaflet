@@ -27,10 +27,7 @@ class Stac:
             try:
                 data = collection.to_dict()
 
-                has_cog = False
-                # determine if collection has compatible items by looking to its item_assets property
-                if data["item_assets"]:
-                    has_cog = True
+                has_cog = True if data["item_assets"] else False
 
                 id = data["id"].strip()
                 title = data["title"].strip()
@@ -206,7 +203,6 @@ class Stac:
         bounds = r["bounds"]
         return bounds
 
-    # QUESTION: Is this being or planning to be used?
     def add_stac_layer(
         self,
         url=None,
