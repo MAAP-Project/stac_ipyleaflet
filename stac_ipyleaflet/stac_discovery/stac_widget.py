@@ -1,63 +1,115 @@
 from datetime import datetime
-from ipywidgets import Box, DatePicker, Dropdown, HBox, HTML
-from ipywidgets import Layout, Output, RadioButtons, SelectionSlider, Tab, ToggleButtons, VBox
+from ipywidgets import Box, Checkbox, DatePicker, Dropdown, HBox, HTML
+from ipywidgets import (
+    Label,
+    Layout,
+    Output,
+    RadioButtons,
+    SelectionSlider,
+    Tab,
+    ToggleButtons,
+    VBox,
+)
+import logging
 from pystac_client import Client
 from stac_ipyleaflet.constants import TITILER_ENDPOINT
 from stac_ipyleaflet.stac_discovery.stac import Stac
 
-class StacDiscoveryWidget():
-    def template(self) -> Box( style={"max_height: 200px"}):
-        opacity_values = [i*10 for i in range(10+1)]  # [0.001, 0.002, ...]
+
+class StacDiscoveryWidget:
+    def template(self) -> Box(style={"max_height: 200px"}):
+        opacity_values = [i * 10 for i in range(10 + 1)]  # [0.001, 0.002, ...]
         standard_width = "440px"
         styles = {
-            "init": {"description_width": "initial",},
-            "desc": "white-space:normal;font-size:smaller; max-height:80px;"
+            "init": {
+                "description_width": "initial",
+            },
+            "desc": "white-space:normal;font-size:smaller; max-height:80px;",
+            "label": "font-weight:bold;",
         }
         layouts = {
             "default": Layout(width=standard_width, padding="2px 6px"),
-            "header": Layout(width=standard_width, padding="2px 6px", margin="2px 2px -6px 2px"),
-            "buttons": Layout(display="flex", flex_flow="row", align_items="flex-end", justify_content="flex-end", margin="0.5rem 1.5rem"),
+            "checkbox": Layout(width="auto", padding="2px 0px 2px 6px"),
+            "header": Layout(
+                width=standard_width, padding="2px 6px", margin="2px 2px -6px 2px"
+            ),
+            "subtitle": Layout(
+                width=standard_width, padding="0px 0px", margin="-12px 2px 2px 34px"
+            ),
+            "buttons": Layout(
+                display="flex",
+                flex_flow="row",
+                align_items="flex-end",
+                justify_content="flex-end",
+                margin="0.5rem 1.5rem",
+            ),
             "radio": Layout(display="flex", width="max-content", padding="2px 6px"),
         }
 
         output = Output(
-            layout=Layout(width=standard_width, height="200px", padding="4px 8px 4px 8px", overflow="auto")
+            layout=Layout(
+                width=standard_width,
+                height="200px",
+                padding="4px 8px 4px 8px",
+                overflow="auto",
+            )
         )
 
         # Templates for the STAC Discovery Widget
         stac_widget = VBox()
-        stac_widget.layout.width="480px"
-        stac_widget.layout.height="400px"
-        stac_widget.layout.flex_flow="column"
-        stac_widget.layout.overflow="auto"
+        stac_widget.layout.width = "480px"
+        stac_widget.layout.height = "400px"
+        stac_widget.layout.flex_flow = "column"
+        stac_widget.layout.overflow = "auto"
 
         stac_catalogs = [
             {"name": "MAAP STAC", "url": "https://stac.maap-project.org"},
             # {"name": "VEDA STAC", "url": "https://staging-stac.delta-backend.com"},
-            # {"name": "MAAP STAC", "url": "https://wssn144yw1.execute-api.us-west-2.amazonaws.com/"},            
-            {"name": "Element84 Earth Search", "url": "https://earth-search.aws.element84.com/v1"},
+            # {"name": "MAAP STAC", "url": "https://wssn144yw1.execute-api.us-west-2.amazonaws.com/"},
+            {
+                "name": "Element84 Earth Search",
+                "url": "https://earth-search.aws.element84.com/v1",
+            },
             # {"name": "Microsoft Planetary Computer", "url": "https://planetarycomputer.microsoft.com/api/stac/v1"},
         ]
         # make list of name values from stac_catalogs
-        catalog_options = sorted([c['name'] for c in stac_catalogs])
-        selected_catalog = stac_catalogs[0]
+        catalog_options = sorted([c["name"] for c in stac_catalogs])
         for cat in stac_catalogs:
-            # print(cat)
             stac_client = Client.open(cat["url"], headers=[])
             collections_object = stac_client.get_all_collections()
             collections = Stac.organize_collections(collections_object)
             cat["collections"] = collections
+        # set default catalog based on name
+        selected_catalog = [cat for cat in stac_catalogs if "MAAP" in cat["name"]][0]
+
         if "collections" not in selected_catalog:
-            print("COLLECTIONS NOT FOUND")
-            return None
-        # else:
-        selected_collection_options = sorted([c for c in selected_catalog["collections"]], key=lambda c: c["id"])
+            logging.warn("NO COLLECTIONS FOUND")
+
+        collections_filter_checkbox = Checkbox(
+            value=True, layout=layouts["checkbox"], indent=False
+        )
+
+        # available collections have been tagged as `has_cog: True` when reviewing item_assets
+        def get_available_collections(catalog):
+            if collections_filter_checkbox.value:
+                return sorted(
+                    [c for c in catalog["collections"] if c["has_cog"]],
+                    key=lambda c: c["id"],
+                )
+            else:
+                return sorted(
+                    [c for c in catalog["collections"]], key=lambda c: c["id"]
+                )
+
+        selected_collection_options = get_available_collections(
+            catalog=selected_catalog
+        )
         selected_collection = selected_collection_options[0]
-        self.stac_data = { 
+        self.stac_data = {
             "catalog": selected_catalog,
             "collection": selected_collection,
             "items": [],
-            "layer_added": False
+            "layer_added": False,
         }
 
         # STAC Widget Items
@@ -65,13 +117,16 @@ class StacDiscoveryWidget():
             options=catalog_options,
             value=self.stac_data["catalog"]["name"],
             style=styles["init"],
-            disabled=True,
             layout=layouts["default"],
         )
         catalogs_box = VBox(
             [
-                HTML(value="<b>Catalog</b>", style=styles["init"], layout=layouts["header"],),
-                catalogs_dropdown
+                HTML(
+                    value="<b>Catalog</b>",
+                    style=styles["init"],
+                    layout=layouts["header"],
+                ),
+                catalogs_dropdown,
             ]
         )
         collections_dropdown = Dropdown(
@@ -80,10 +135,30 @@ class StacDiscoveryWidget():
             style=styles["init"],
             layout=layouts["default"],
         )
+        collections_filter_label = HTML(value="<b>Only Show Displayable Items</b>")
+        collections_filter_desc = HTML(
+            value="<em>Currently, only Cloud-Optimized GeoTiffs are supported</em>",
+            style=styles["init"],
+            layout=layouts["subtitle"],
+        )
+        collections_checkbox_box = HBox(
+            [collections_filter_checkbox, collections_filter_label]
+        )
+        collections_filter_box = VBox(
+            [
+                collections_checkbox_box,
+                collections_filter_desc,
+            ]
+        )
         collections_box = VBox(
             [
-                HTML(value="<b>Collection</b>", style=styles["init"], layout=layouts["header"],),
-                collections_dropdown
+                HTML(
+                    value="<b>Collection</b>",
+                    style=styles["init"],
+                    layout=layouts["default"],
+                ),
+                collections_dropdown,
+                collections_filter_box,
             ]
         )
         collection_description = HTML(
@@ -93,8 +168,12 @@ class StacDiscoveryWidget():
         )
         collection_description_box = VBox(
             [
-                HTML(value="<b>Description</b>", style=styles["init"], layout=layouts["header"],),
-                collection_description
+                HTML(
+                    value="<b>Description</b>",
+                    style=styles["init"],
+                    layout=layouts["header"],
+                ),
+                collection_description,
             ]
         )
         collection_url = HTML(
@@ -102,7 +181,9 @@ class StacDiscoveryWidget():
             style=styles["init"],
             layout=layouts["default"],
         )
-        stac_browser_url = self.stac_data["collection"]["href"].replace("https://", "https://stac-browser.maap-project.org/external/")
+        stac_browser_url = self.stac_data["collection"]["href"].replace(
+            "https://", "https://stac-browser.maap-project.org/external/"
+        )
         collection_url_browser = HTML(
             value=f'<a href={stac_browser_url} target="_blank"><b>View in STAC Browser</b></a>',
             style=styles["init"],
@@ -112,19 +193,28 @@ class StacDiscoveryWidget():
         collection_url_browser.style.text_color = "blue"
         collection_url_box = VBox(
             [
-                HTML(value="<b>URL</b>", style=styles["init"], layout=layouts["header"],),
-                collection_url, collection_url_browser
+                HTML(
+                    value="<b>URL</b>",
+                    style=styles["init"],
+                    layout=layouts["header"],
+                ),
+                collection_url,
+                collection_url_browser,
             ]
         )
         collection_start_date = DatePicker(
-            value=datetime.strptime(self.stac_data["collection"]["start_date"], "%Y-%m-%d"),
+            value=datetime.strptime(
+                self.stac_data["collection"]["start_date"], "%Y-%m-%d"
+            ),
             description="Start",
             disabled=False if collections_dropdown.value else True,
             style=styles["init"],
             layout=layouts["default"],
         )
         collection_end_date = DatePicker(
-            value=datetime.strptime(self.stac_data["collection"]["end_date"], "%Y-%m-%d"),
+            value=datetime.strptime(
+                self.stac_data["collection"]["end_date"], "%Y-%m-%d"
+            ),
             description="End",
             disabled=False if collections_dropdown.value else True,
             style=styles["init"],
@@ -132,30 +222,28 @@ class StacDiscoveryWidget():
         )
         collection_dates_box = VBox(
             [
-                HTML(value="<b>Date Range</b>", style=styles["init"], layout=layouts["header"],),
-                HBox([collection_start_date, collection_end_date])
+                HTML(
+                    value="<b>Date Range</b>",
+                    style=styles["init"],
+                    layout=layouts["header"],
+                ),
+                HBox([collection_start_date, collection_end_date]),
             ]
         )
         defaultItemsDropdownText = "Select an Item"
         items_dropdown = Dropdown(
-            options=[],
-            value=None,
-            style=styles["init"],
-            layout=layouts["default"]
+            options=[], value=None, style=styles["init"], layout=layouts["default"]
         )
         items_box = VBox(
             [
-                HTML(value="<b>Items</b>", style=styles["init"], layout=layouts["header"],),
-                items_dropdown
+                HTML(
+                    value="<b>Items</b>",
+                    style=styles["init"],
+                    layout=layouts["header"],
+                ),
+                items_dropdown,
             ]
         )
-        # layer_name = Text(
-        #     value="STAC Layer",
-        #     description="Layer name:",
-        #     tooltip="Enter a layer name for the selected file",
-        #     style=styles["init"],
-        #     layout=layouts["default"],
-        # )
 
         band_width = "125px"
 
@@ -168,8 +256,12 @@ class StacDiscoveryWidget():
 
         singular_band_dropdown_box = VBox(
             [
-                HTML(value="<b>Band(s)</b>", style=styles["init"], layout=layouts["header"],),
-                singular_band_dropdown
+                HTML(
+                    value="<b>Band(s)</b>",
+                    style=styles["init"],
+                    layout=layouts["header"],
+                ),
+                singular_band_dropdown,
             ]
         )
 
@@ -195,30 +287,114 @@ class StacDiscoveryWidget():
             layout=Layout(width=band_width, padding="4px 8px"),
         )
 
-        cmaps = [('Perceptually Uniform Sequential', [
-                'viridis', 'plasma', 'inferno', 'magma', 'cividis']),
-            ('Sequential', [
-                'Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
-                'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
-                'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn']),
-            ('Sequential (2)', [
-                'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
-                'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
-                'hot', 'afmhot', 'gist_heat', 'copper']),
-            ('Diverging', [
-                'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
-                'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic']),
-            ('Cyclic', ['twilight', 'twilight_shifted', 'hsv']),
-            ('Qualitative', [
-                'Pastel1', 'Pastel2', 'Paired', 'Accent',
-                'Dark2', 'Set1', 'Set2', 'Set3',
-                'tab10', 'tab20', 'tab20b', 'tab20c']),
-            ('Miscellaneous', [
-                'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
-                'gnuplot', 'gnuplot2', 'CMRmap', 'cubehelix', 'brg',
-                'gist_rainbow', 'rainbow', 'jet', 'turbo', 'nipy_spectral',
-                'gist_ncar'])]
-        
+        cmaps = [
+            (
+                "Perceptually Uniform Sequential",
+                ["viridis", "plasma", "inferno", "magma", "cividis"],
+            ),
+            (
+                "Sequential",
+                [
+                    "Greys",
+                    "Purples",
+                    "Blues",
+                    "Greens",
+                    "Oranges",
+                    "Reds",
+                    "YlOrBr",
+                    "YlOrRd",
+                    "OrRd",
+                    "PuRd",
+                    "RdPu",
+                    "BuPu",
+                    "GnBu",
+                    "PuBu",
+                    "YlGnBu",
+                    "PuBuGn",
+                    "BuGn",
+                    "YlGn",
+                ],
+            ),
+            (
+                "Sequential (2)",
+                [
+                    "binary",
+                    "gist_yarg",
+                    "gist_gray",
+                    "gray",
+                    "bone",
+                    "pink",
+                    "spring",
+                    "summer",
+                    "autumn",
+                    "winter",
+                    "cool",
+                    "Wistia",
+                    "hot",
+                    "afmhot",
+                    "gist_heat",
+                    "copper",
+                ],
+            ),
+            (
+                "Diverging",
+                [
+                    "PiYG",
+                    "PRGn",
+                    "BrBG",
+                    "PuOr",
+                    "RdGy",
+                    "RdBu",
+                    "RdYlBu",
+                    "RdYlGn",
+                    "Spectral",
+                    "coolwarm",
+                    "bwr",
+                    "seismic",
+                ],
+            ),
+            ("Cyclic", ["twilight", "twilight_shifted", "hsv"]),
+            (
+                "Qualitative",
+                [
+                    "Pastel1",
+                    "Pastel2",
+                    "Paired",
+                    "Accent",
+                    "Dark2",
+                    "Set1",
+                    "Set2",
+                    "Set3",
+                    "tab10",
+                    "tab20",
+                    "tab20b",
+                    "tab20c",
+                ],
+            ),
+            (
+                "Miscellaneous",
+                [
+                    "flag",
+                    "prism",
+                    "ocean",
+                    "gist_earth",
+                    "terrain",
+                    "gist_stern",
+                    "gnuplot",
+                    "gnuplot2",
+                    "CMRmap",
+                    "cubehelix",
+                    "brg",
+                    "gist_rainbow",
+                    "rainbow",
+                    "jet",
+                    "turbo",
+                    "nipy_spectral",
+                    "gist_ncar",
+                ],
+            ),
+        ]
+
         def list_palettes(add_extra=False, lowercase=False, category=""):
             """List all available colormaps. See a complete lost of colormaps at https://matplotlib.org/stable/tutorials/colors/colormaps.html.
             Returns:
@@ -228,7 +404,9 @@ class StacDiscoveryWidget():
 
             if not category == "":
                 all_colormap_options = plt.colormaps()
-                filtered_color_options = list(filter(lambda x: x[0].startswith(category), cmaps))
+                filtered_color_options = list(
+                    filter(lambda x: x[0].startswith(category), cmaps)
+                )
                 palette_options = list(map(lambda x: x[1], filtered_color_options))[0]
                 if add_extra:
                     palette_options += ["dem", "ndvi", "ndwi"]
@@ -236,11 +414,10 @@ class StacDiscoveryWidget():
                     palette_options = [i.lower() for i in palette_options]
                 palette_options.sort()
                 return palette_options
-        
-        def list_palette_categories():                        
+
+        def list_palette_categories():
             palette_categories = list(map(lambda x: x[0], cmaps))
             return palette_categories
-
 
         palette_category_options = list_palette_categories()
         palette_categories_dropdown = Dropdown(
@@ -248,14 +425,20 @@ class StacDiscoveryWidget():
             value=palette_category_options[0],
             layout=layouts["default"],
             style=styles["init"],
-        )        
+        )
         palette_categories_dropdown_box = VBox(
             [
-                HTML(value="<b>Palette Category</b>", style=styles["init"], layout=layouts["header"],),
-                palette_categories_dropdown
+                HTML(
+                    value="<b>Palette Category</b>",
+                    style=styles["init"],
+                    layout=layouts["header"],
+                ),
+                palette_categories_dropdown,
             ]
         )
-        palette_options = list_palettes(lowercase=True, category=palette_categories_dropdown.value)
+        palette_options = list_palettes(
+            lowercase=True, category=palette_categories_dropdown.value
+        )
         # palettes_dropdown = Dropdown(
         #     options=palette_options,
         #     value=palette_options[0],
@@ -271,8 +454,12 @@ class StacDiscoveryWidget():
         )
         palettes_radiobuttons_box = VBox(
             [
-                HTML(value="<b>Palette</b>", style=styles["init"], layout=layouts["header"],),
-                palette_radiobuttons
+                HTML(
+                    value="<b>Palette</b>",
+                    style=styles["init"],
+                    layout=layouts["header"],
+                ),
+                palette_radiobuttons,
             ]
         )
         # TODO: Add STAC layers to LayerGroup instead of base
@@ -293,11 +480,13 @@ class StacDiscoveryWidget():
         #     style=styles["init"],
         # )
         # params_widget = VBox([checkbox, add_params])
-        raster_options = VBox([
-            HBox([singular_band_dropdown_box]),
-            HBox([palette_categories_dropdown_box]),
-            HBox([palettes_radiobuttons_box]),
-        ])
+        raster_options = VBox(
+            [
+                HBox([singular_band_dropdown_box]),
+                HBox([palette_categories_dropdown_box]),
+                HBox([palettes_radiobuttons_box]),
+            ]
+        )
         stac_buttons = ToggleButtons(
             value=None,
             options=["Display "],
@@ -307,33 +496,33 @@ class StacDiscoveryWidget():
         )
         stac_opacity_slider = SelectionSlider(
             value=1,
-            options=[("%g"%i, i/100) for i in opacity_values],
+            options=[("%g" % i, i / 100) for i in opacity_values],
             description="% Opacity:",
             continuous_update=False,
-            orientation='horizontal',
-            layout=Layout(margin="-12px 0 4px 0")
+            orientation="horizontal",
+            layout=Layout(margin="-12px 0 4px 0"),
         )
 
-        buttons_box = Box([ stac_opacity_slider, stac_buttons], layout=layouts["buttons"])
-        stac_tab_labels = ['Catalog', 'Visualization']
+        buttons_box = Box(
+            [stac_opacity_slider, stac_buttons], layout=layouts["buttons"]
+        )
+        stac_tab_labels = ["Catalog", "Visualization"]
         tab_widget_children = []
         stac_tab_widget = Tab()
 
-        for label in stac_tab_labels:     
+        for label in stac_tab_labels:
             tab_content = VBox()
-            if label == 'Catalog':
+            if label == "Catalog":
                 tab_content.children = [
                     catalogs_box,
                     collections_box,
                     collection_description_box,
                     collection_url_box,
                     collection_dates_box,
-                    items_box
+                    items_box,
                 ]
-            elif label == 'Visualization':
-                tab_content.children = [
-                    raster_options
-                ]
+            elif label == "Visualization":
+                tab_content.children = [raster_options]
             tab_widget_children.append(tab_content)
         stac_tab_widget.children = tab_widget_children
         stac_tab_widget.titles = stac_tab_labels
@@ -348,36 +537,43 @@ class StacDiscoveryWidget():
             # raster_options,
             stac_tab_widget,
             buttons_box,
-            output
+            output,
         ]
-    
+
         def handle_stac_layer_opacity(change):
             if self.stac_data["layer_added"] == True:
                 l = self.find_layer(items_dropdown.value)
                 if l.name:
-                    l.opacity = change["new"]             
+                    l.opacity = change["new"]
 
         def prep_data_display_settings():
             is_displayable = False
             stac_opacity_slider.disabled = True
-            assets = [i for i in self.stac_data["items"] if i["id"] == items_dropdown.value][0]["assets"]
-            item_href = [i for i in self.stac_data["items"] if i["id"] == items_dropdown.value][0]["href"]
+            assets = [
+                i for i in self.stac_data["items"] if i["id"] == items_dropdown.value
+            ][0]["assets"]
+            item_href = [
+                i for i in self.stac_data["items"] if i["id"] == items_dropdown.value
+            ][0]["href"]
             metadata = Stac.get_item_info(url=item_href)
             if "assets" in metadata:
                 self.stac_data["metadata"] = metadata
-                      
+
             # with output:
             #     output.clear_output()
             #     print("SELECTED ITEM", [i for i in self.stac_data["items"] if i["id"] == items_dropdown.value][0])
             #     print("METADATA", json.dumps(metadata))
-            
+
             for asset in assets:
                 data_asset = assets[asset]
-                self.stac_data["data_href"] = data_asset.get_absolute_href() 
+                self.stac_data["data_href"] = data_asset.get_absolute_href()
                 data_types = data_asset.media_type
-                # print(f"{asset} data type:", data_types)    
-                if "application=geotiff" in data_types and "profile=cloud-optimized" in data_types:
-                    is_displayable = True                                    
+                # print(f"{asset} data type:", data_types)
+                if (
+                    "application=geotiff" in data_types
+                    and "profile=cloud-optimized" in data_types
+                ):
+                    is_displayable = True
                 # if "statistics" in metadata:
                 #     minv, maxv = metadata["statistics"]["1"]["min"], metadata["statistics"]["1"]["max"]
                 #     print("MIN/MAX", minv, maxv)
@@ -397,21 +593,23 @@ class StacDiscoveryWidget():
                         singular_band_dropdown.value = default_bands[0]
                         # stac_tab_widget.selected_index = 1
                     else:
-                        raster_options.children = []                      
+                        raster_options.children = []
                         singular_band_dropdown.value = None
-            
+
             if is_displayable:
                 stac_buttons.disabled = False
                 with output:
                     output.clear_output()
-                    print("Item is ready for display.")    
+                    print("Item is ready for display.")
             else:
                 stac_buttons.disabled = True
                 stac_opacity_slider.disabled = True
                 with output:
                     output.clear_output()
-                    print("This item cannot displayed. Only Cloud-Optimized GeoTIFFs are supported at this time.")
-               
+                    print(
+                        "This item cannot displayed. Only Cloud-Optimized GeoTIFFs are supported at this time."
+                    )
+
         def query_collection_items(selected_collection):
             # print("SELECTED TO QUERY", selected_collection)
             items_dropdown.options = []
@@ -423,7 +621,9 @@ class StacDiscoveryWidget():
                     # geometries = [self.draw_control.last_draw['geometry']]
                     # print(geometries)
                     if isinstance(collection_start_date.value, datetime):
-                        start_date_query = collection_start_date.value.strftime("%Y-%m-%d")
+                        start_date_query = collection_start_date.value.strftime(
+                            "%Y-%m-%d"
+                        )
                     else:
                         start_date_query = str(collection_start_date.value)
 
@@ -432,13 +632,13 @@ class StacDiscoveryWidget():
                     else:
                         end_date_query = str(collection_end_date.value)
 
-                    _datetime = start_date_query 
+                    _datetime = start_date_query
                     if collection_end_date.value is not None:
                         _datetime = _datetime + "/" + end_date_query
                     url = selected_collection["href"]
                     _query_url = url if url.endswith("/items") else url + "/items"
-                    
-                    print("from ",_query_url, "...")
+
+                    print("from ", _query_url, "...")
 
                     collection_items = Stac.stac_search(
                         url=_query_url,
@@ -450,70 +650,100 @@ class StacDiscoveryWidget():
                     )
                     result_items = list(collection_items.values())
                     self.stac_data["items"] = result_items
-                    items = list(collection_items.keys())      
-                    default = [defaultItemsDropdownText] 
+                    items = list(collection_items.keys())
+                    default = [defaultItemsDropdownText]
                     if len(items) > 0:
-                        options = [*default, *items]                        
-                        items_dropdown.options = options   
-                        items_dropdown.value = options[0]                     
-                        output.clear_output()                        
-                        print(f"{len(items)} items were found - please select 1 to determine if it can be displayed.")                        
+                        options = [*default, *items]
+                        items_dropdown.options = options
+                        items_dropdown.value = options[0]
+                        output.clear_output()
+                        print(
+                            f"{len(items)} items were found - please select 1 to determine if it can be displayed."
+                        )
                     else:
                         output.clear_output()
-                        print("No items were found within this Collection. Please select another.")
+                        print(
+                            "No items were found within this Collection. Please select another."
+                        )
 
                 except Exception as err:
                     output.clear_output()
                     print("COLLECTION QUERY ERROR", err)
 
+        # sets and refreshes which collections are set based on selected catalog
+        def set_collection_options():
+            selected_catalog = [
+                cat for cat in stac_catalogs if cat["name"] == catalogs_dropdown.value
+            ][0]
+            selected_collection_options = get_available_collections(
+                catalog=selected_catalog
+            )
+            collections_dropdown.options = [
+                c["id"] for c in selected_collection_options
+            ]
+
+            selected_collection = [
+                c
+                for c in selected_collection_options
+                if c["id"] == collections_dropdown.value
+            ][0]
+            collections_dropdown.value = selected_collection["id"]
+
+            collection_description.value = f'<div style="{styles["desc"]}">{selected_collection["description"]}</div>'
+            collection_url.value = f'<a href={selected_collection["href"]} target="_blank">{selected_collection["href"]}</a>'
+            stac_browser_url = selected_collection["href"].replace(
+                "https://", "https://stac-browser.maap-project.org/external/"
+            )
+            collection_url_browser.value = f'<a href={stac_browser_url} target="_blank"><b>View in STAC Browser</b></a>'
+            if selected_collection["start_date"] != "":
+                collection_start_date.value = datetime.strptime(
+                    selected_collection["start_date"], "%Y-%m-%d"
+                )
+            else:
+                collection_start_date.value = None
+            if selected_collection["end_date"] != "":
+                collection_end_date.value = datetime.strptime(
+                    selected_collection["end_date"], "%Y-%m-%d"
+                )
+            else:
+                collection_end_date.value = None
+
+            self.stac_data["catalog"] = selected_catalog
+            self.stac_data["collection"] = selected_collection
+            query_collection_items(selected_collection)
 
         # Event Watchers
         def catalogs_changed(change):
-            if change["new"]:                
-                selected_catalog = [cat for cat in stac_catalogs if cat["name"] == catalogs_dropdown.value][0]
-                selected_collection_options = sorted([c for c in selected_catalog["collections"]], key=lambda c: c["id"])
-                selected_collection = selected_collection_options[0]
-                collections_dropdown.options = [c["id"] for c in selected_collection_options]
-                collections_dropdown.value = selected_collection["id"]
-                self.stac_data["catalog"] = selected_catalog
-                self.stac_data["collection"] = selected_collection
-                query_collection_items(selected_collection)
-                
-                # with output:
-                #     output.clear_output()
-                #     print(selected_collection["id"])
+            if change["new"]:
+                set_collection_options()
 
         catalogs_dropdown.observe(catalogs_changed, names="value")
-        
+
         def collection_changed(change):
             if change["new"]:
-                selected_collection = [c for c in selected_collection_options if c["id"] == collections_dropdown.value][0]
-                collection_description.value = f'<div style="{styles["desc"]}">{selected_collection["description"]}</div>'
-                collection_url.value = f'<a href={selected_collection["href"]} target="_blank">{selected_collection["href"]}</a>'
-                stac_browser_url = selected_collection["href"].replace("https://", "https://stac-browser.maap-project.org/external/")
-                collection_url_browser.value = f'<a href={stac_browser_url} target="_blank"><b>View in STAC Browser</b></a>'
-                if selected_collection["start_date"] != "":
-                    collection_start_date.value = datetime.strptime(selected_collection["start_date"], "%Y-%m-%d")
-                else:
-                    collection_start_date.value = None
-                if selected_collection["end_date"] != "":
-                    collection_end_date.value = datetime.strptime(selected_collection["end_date"], "%Y-%m-%d")
-                else:
-                    collection_end_date.value = None
-                self.stac_data["collection"] = selected_collection
-                query_collection_items(selected_collection)
+                set_collection_options()
 
         collections_dropdown.observe(collection_changed, names="value")
-    
-        def items_changed(change):            
-            if change["new"] and change["new"] != defaultItemsDropdownText:                
+
+        def collections_filtered_checkbox_changed(change):
+            if change["type"] == "change":
+                set_collection_options()
+
+        collections_filter_checkbox.observe(
+            collections_filtered_checkbox_changed, names="value"
+        )
+
+        def items_changed(change):
+            if change["new"] and change["new"] != defaultItemsDropdownText:
                 prep_data_display_settings()
 
         items_dropdown.observe(items_changed, names="value")
 
         def palette_category_changed(change):
             if change["new"]:
-                new_palettes = list_palettes(lowercase=True, category=palette_categories_dropdown.value)
+                new_palettes = list_palettes(
+                    lowercase=True, category=palette_categories_dropdown.value
+                )
                 palette_radiobuttons.options = new_palettes
                 palette_radiobuttons.value = new_palettes[0]
 
@@ -550,8 +780,13 @@ class StacDiscoveryWidget():
                         #     vis_params = eval(add_params.value)
                         # else:
                         vis_params = {}
-                        
-                        if (palette_radiobuttons.value and singular_band_dropdown.options) or (palette_radiobuttons.value and "expression" in vis_params):
+
+                        if (
+                            palette_radiobuttons.value
+                            and singular_band_dropdown.options
+                        ) or (
+                            palette_radiobuttons.value and "expression" in vis_params
+                        ):
                             vis_params["colormap_name"] = palette_radiobuttons.value
 
                         if vmin.value and vmax.value:
@@ -571,7 +806,7 @@ class StacDiscoveryWidget():
                             item=items_dropdown.value,
                             assets=assets,
                             palette=vis_params["colormap_name"],
-                            titiler_stac_endpoint=TITILER_ENDPOINT
+                            titiler_stac_endpoint=TITILER_ENDPOINT,
                         )
                         print("stac url:", stac_url)
                         if "tiles" in stac_url:
@@ -588,14 +823,22 @@ class StacDiscoveryWidget():
 
                                 tile_url = self.stac_data["tiles_url"]
                                 if self.stac_data["layer_added"] == True:
-                                    self.layers = self.layers[:len(self.layers)-1]
+                                    self.layers = self.layers[: len(self.layers) - 1]
                                     self.stac_data["layer_added"] = False
-                                self.add_tile_layer(url=tile_url, name=items_dropdown.value, attribution=items_dropdown.value)
-                                stac_opacity_slider.observe(handle_stac_layer_opacity, names="value")
+                                self.add_tile_layer(
+                                    url=tile_url,
+                                    name=items_dropdown.value,
+                                    attribution=items_dropdown.value,
+                                )
+                                stac_opacity_slider.observe(
+                                    handle_stac_layer_opacity, names="value"
+                                )
                                 self.stac_data["layer_added"] = True
                                 reset_stac_opacity_slider()
                                 if len(bounds) > 0:
-                                    self.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+                                    self.fit_bounds(
+                                        [[bounds[1], bounds[0]], [bounds[3], bounds[2]]]
+                                    )
                                 output.clear_output()
                                 # print("STAC URL", stac_url["tiles"][0])
                             except Exception as err:
@@ -614,6 +857,6 @@ class StacDiscoveryWidget():
 
         query_collection_items(selected_collection)
 
-        stac_widget.layout.display = 'none'
-        
+        stac_widget.layout.display = "none"
+
         return stac_widget

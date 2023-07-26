@@ -5,9 +5,11 @@ from stac_ipyleaflet.stac_discovery.requests import make_get_request
 from stac_ipyleaflet.constants import RESCALE
 from typing import TypedDict, Optional
 
+
 class OutputCollectionObj(TypedDict):
     id: str
     title: str
+    has_cog: bool
     start_date: str
     end_date: str
     bbox: str
@@ -16,14 +18,17 @@ class OutputCollectionObj(TypedDict):
     description: str
     license: str
 
-class Stac():
 
+class Stac:
     @staticmethod
     def organize_collections(collections=[]):
         output_collections = []
         for collection in collections:
             try:
                 data = collection.to_dict()
+
+                has_cog = True if data["item_assets"] else False
+
                 id = data["id"].strip()
                 title = data["title"].strip()
 
@@ -61,14 +66,27 @@ class Stac():
                 )
 
                 license = data["license"]
-                collection_obj = OutputCollectionObj({'id': id, 'title': title, 'start_date': start_date, 'end_date': end_date, 'bbox': bbox, 'metadata': metadata, 'href': href, 'description': description, 'license': license})
+                collection_obj = OutputCollectionObj(
+                    {
+                        "id": id,
+                        "title": title,
+                        "has_cog": has_cog,
+                        "start_date": start_date,
+                        "end_date": end_date,
+                        "bbox": bbox,
+                        "metadata": metadata,
+                        "href": href,
+                        "description": description,
+                        "license": license,
+                    }
+                )
                 output_collections.append(collection_obj)
             except Exception as err:
-                error = {'error': err, 'collection': collection}
+                error = {"error": err, "collection": collection}
                 logging.error(error)
                 return None
         if len(output_collections) > 0:
-            output_collections.sort(key= lambda x:x['title'])
+            output_collections.sort(key=lambda x: x["title"])
         return output_collections
 
     @staticmethod
@@ -84,9 +102,8 @@ class Stac():
 
         if isinstance(url, str):
             r = make_get_request(url).json()
-            
+
         return r
-    
 
     @staticmethod
     def stac_tile(
@@ -144,13 +161,19 @@ class Stac():
             kwargs.pop("TileMatrixSetId")
 
         if isinstance(titiler_stac_endpoint, str):
-            r = make_get_request(f"{titiler_stac_endpoint}/stac/{TileMatrixSetId}/tilejson.json", kwargs).json()
+            r = make_get_request(
+                f"{titiler_stac_endpoint}/stac/{TileMatrixSetId}/tilejson.json", kwargs
+            ).json()
         else:
-            r = make_get_request(titiler_stac_endpoint.url_for_stac_item(), kwargs).json()
+            r = make_get_request(
+                titiler_stac_endpoint.url_for_stac_item(), kwargs
+            ).json()
         return r["tiles"][0]
 
     @staticmethod
-    def stac_bounds(url=None, collection=None, item=None, titiler_stac_endpoint=None, **kwargs):
+    def stac_bounds(
+        url=None, collection=None, item=None, titiler_stac_endpoint=None, **kwargs
+    ):
         """Get the bounding box of a single SpatialTemporal Asset Catalog (STAC) item.
         Args:
             url (str): HTTP URL to a STAC item
@@ -173,12 +196,13 @@ class Stac():
         if isinstance(titiler_stac_endpoint, str):
             r = make_get_request(f"{titiler_stac_endpoint}/stac/bounds", kwargs).json()
         else:
-            r = make_get_request(titiler_stac_endpoint.url_for_stac_bounds(), kwargs).json()
+            r = make_get_request(
+                titiler_stac_endpoint.url_for_stac_bounds(), kwargs
+            ).json()
 
         bounds = r["bounds"]
         return bounds
 
-    # QUESTION: Is this being or planning to be used? 
     def add_stac_layer(
         self,
         url=None,
@@ -242,7 +266,7 @@ class Stac():
 
         if len(bands) == 1:
             return bands
-        
+
         if not isinstance(bands, list):
             raise ValueError("bands must be a list or a string.")
 
@@ -286,13 +310,18 @@ class Stac():
             items = list(search.item_collection())
             info = {}
             for item in items:
-                info[item.id] = {'id': item.id, 'href': item.get_self_href(), 'bands': list(item.get_assets().keys()), 'assets': item.get_assets()}
+                info[item.id] = {
+                    "id": item.id,
+                    "href": item.get_self_href(),
+                    "bands": list(item.get_assets().keys()),
+                    "assets": item.get_assets(),
+                }
             return info
         else:
             return search
-    
+
     @staticmethod
-    def get_metadata(   
+    def get_metadata(
         data_type="cog",
         titiler_stac_endpoint=None,
         url=None,
@@ -305,7 +334,9 @@ class Stac():
             kwargs["max_size"] = max_size
 
         if isinstance(titiler_stac_endpoint, str):
-            r = make_get_request(f"{titiler_stac_endpoint}/{data_type}/metadata", kwargs).json()
+            r = make_get_request(
+                f"{titiler_stac_endpoint}/{data_type}/metadata", kwargs
+            ).json()
             return r
         else:
             return "Cannot process request: titiler stac endpoint not provided."
@@ -369,7 +400,10 @@ class Stac():
             kwargs.pop("TileMatrixSetId")
 
         if isinstance(titiler_stac_endpoint, str):
-            r = make_get_request(f"{titiler_stac_endpoint}/{data_type}/{TileMatrixSetId}/tilejson.json", kwargs).json()
+            r = make_get_request(
+                f"{titiler_stac_endpoint}/{data_type}/{TileMatrixSetId}/tilejson.json",
+                kwargs,
+            ).json()
             return r
         else:
             return "STAC ENDPOINT IS NECESSARY."
