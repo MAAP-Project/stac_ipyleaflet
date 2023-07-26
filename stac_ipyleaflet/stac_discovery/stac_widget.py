@@ -117,7 +117,6 @@ class StacDiscoveryWidget:
             options=catalog_options,
             value=self.stac_data["catalog"]["name"],
             style=styles["init"],
-            # disabled=True,
             layout=layouts["default"],
         )
         catalogs_box = VBox(
