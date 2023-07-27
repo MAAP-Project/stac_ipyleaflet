@@ -19,11 +19,12 @@ from stac_ipyleaflet.stac_discovery.stac_widget import StacDiscoveryWidget
 from stac_ipyleaflet.widgets.basemaps import BasemapsWidget
 from stac_ipyleaflet.widgets.draw import DrawControlWidget
 
+
 class StacIpyleaflet(Map):
     """
     Stac ipyleaflet is an extension to ipyleaflet `Map`.
     """
-   
+
     raw_input = input
 
     draw_control: DrawControl
@@ -46,13 +47,13 @@ class StacIpyleaflet(Map):
             kwargs["layout"] = Layout(height="600px")
 
         if "scroll_wheel_zoom" not in kwargs:
-            kwargs["scroll_wheel_zoom"] = True        
+            kwargs["scroll_wheel_zoom"] = True
 
         # Create map
-        super().__init__(**kwargs)     
-                  
+        super().__init__(**kwargs)
+
         self.accent_color = "SteelBlue"
-        self.layers = BasemapsWidget.template(self)  
+        self.layers = BasemapsWidget.template(self)
 
         self.buttons = {}
         self.selected_data = []
@@ -60,123 +61,147 @@ class StacIpyleaflet(Map):
         self.draw_control_added = False
         self.aoi_coordinates = []
         self.aoi_bbox = ()
-        
-        gif_file = files('stac_ipyleaflet.data').joinpath('loading.gif')
+
+        gif_file = files("stac_ipyleaflet.data").joinpath("loading.gif")
         with open(gif_file, "rb") as f:
-            gif_widget=Image(
+            gif_widget = Image(
                 value=f.read(),
-                format='png',
+                format="png",
                 width=200,
                 height=200,
             )
 
-        loading_widget=VBox()
-        loading_widget.children=[gif_widget]
-        self.loading_widget_layer = Popup(child=loading_widget, min_width=200, min_height=200)
+        loading_widget = VBox()
+        loading_widget.children = [gif_widget]
+        self.loading_widget_layer = Popup(
+            child=loading_widget, min_width=200, min_height=200
+        )
 
-        main_button_layout = Layout(width="120px", height="35px", border="1px solid #4682B4")
-        draw_btn = ToggleButton(description="Draw", icon="square-o", layout=main_button_layout)
+        main_button_layout = Layout(
+            width="120px", height="35px", border="1px solid #4682B4"
+        )
+        draw_btn = ToggleButton(
+            description="Draw", icon="square-o", layout=main_button_layout
+        )
         draw_btn.style.text_color = self.accent_color
         draw_btn.style.button_color = "transparent"
         draw_btn.tooltip = "Draw Area of Interest"
-        draw_btn.observe(self.toggle_draw_widget_display, type="change", names=["value"])
+        draw_btn.observe(
+            self.toggle_draw_widget_display, type="change", names=["value"]
+        )
         self.buttons["draw"] = draw_btn
 
-        layers_btn = ToggleButton(description="Layers", icon="map-o", layout=main_button_layout)
+        layers_btn = ToggleButton(
+            description="Layers", icon="map-o", layout=main_button_layout
+        )
         layers_btn.style.text_color = self.accent_color
         layers_btn.style.button_color = "transparent"
         layers_btn.tooltip = "Open/Close Layers Menu"
-        layers_btn.observe(self.toggle_layers_widget_display, type="change", names=["value"])
+        layers_btn.observe(
+            self.toggle_layers_widget_display, type="change", names=["value"]
+        )
         self.buttons["layers"] = layers_btn
         """ histogram_btn = Button(description="Histogram", icon="bar-chart")
         histogram_btn.style.text_color = "white"
         histogram_btn.style.button_color = self.accent_color
         histogram_btn.on_click(self.create_histograms) """
 
-        stac_btn = ToggleButton(description="STAC Data", icon="search", layout=main_button_layout)
+        stac_btn = ToggleButton(
+            description="STAC Data", icon="search", layout=main_button_layout
+        )
         stac_btn.style.text_color = self.accent_color
         stac_btn.style.button_color = "white"
         stac_btn.tooltip = "Open/Close STAC Data Search"
-        stac_btn.observe(self.toggle_stac_widget_display, type="change", names=["value"])
-        self.buttons["stac"] = stac_btn 
+        stac_btn.observe(
+            self.toggle_stac_widget_display, type="change", names=["value"]
+        )
+        self.buttons["stac"] = stac_btn
 
-        buttons_box_layout = Layout(display='flex',
-                        flex_flow='row',
-                        align_items='center',
-                        justify_content='center',
-                        width='100%',
-                        height="50px")
-        buttons_box = HBox(children=[draw_btn, layers_btn, stac_btn],layout=buttons_box_layout)
+        buttons_box_layout = Layout(
+            display="flex",
+            flex_flow="row",
+            align_items="center",
+            justify_content="center",
+            width="100%",
+            height="50px",
+        )
+        buttons_box = HBox(
+            children=[draw_btn, layers_btn, stac_btn], layout=buttons_box_layout
+        )
         display(buttons_box)
-        
+
         self.add_biomass_layers()
         self.add_custom_tools()
         self.draw_control = DrawControlWidget.template(self)
 
         return None
 
-    #logic to handle main menu toggle buttons
+    # logic to handle main menu toggle buttons
     def toggle_layers_widget_display(self, b):
         if b["new"]:
-            if self.layers_widget.layout.display == 'none':
-                self.layers_widget.layout.display = 'block'
-                self.stac_widget.layout.display = 'none'
-                self.aoi_widget.layout.display = 'none'
+            if self.layers_widget.layout.display == "none":
+                self.layers_widget.layout.display = "block"
+                self.stac_widget.layout.display = "none"
+                self.aoi_widget.layout.display = "none"
                 self.buttons["stac"].value = False
                 self.buttons["draw"].value = False
                 if self.draw_control_added:
                     self.remove(self.draw_control)
                     self.draw_control_added = False
         if not b["new"]:
-            if self.layers_widget.layout.display == 'block':
-                self.layers_widget.layout.display = 'none'
-    
-    def toggle_stac_widget_display(self, b):   
+            if self.layers_widget.layout.display == "block":
+                self.layers_widget.layout.display = "none"
+
+    def toggle_stac_widget_display(self, b):
         if b["new"]:
-            if self.stac_widget.layout.display == 'none':
-                self.stac_widget.layout.display = 'block'
-                self.layers_widget.layout.display = 'none'
-                self.aoi_widget.layout.display = 'none'
+            if self.stac_widget.layout.display == "none":
+                self.stac_widget.layout.display = "block"
+                self.layers_widget.layout.display = "none"
+                self.aoi_widget.layout.display = "none"
                 self.buttons["layers"].value = False
                 self.buttons["draw"].value = False
                 if self.draw_control_added:
                     self.remove(self.draw_control)
                     self.draw_control_added = False
         if not b["new"]:
-            if self.stac_widget.layout.display == 'block':
-                self.stac_widget.layout.display = 'none'
-    
-    def toggle_draw_widget_display(self, b):   
+            if self.stac_widget.layout.display == "block":
+                self.stac_widget.layout.display = "none"
+
+    def toggle_draw_widget_display(self, b):
         if b["new"]:
-            if self.aoi_widget.layout.display == 'none':
-                self.aoi_widget.layout.display = 'block'
+            if self.aoi_widget.layout.display == "none":
+                self.aoi_widget.layout.display = "block"
                 self.add_control(self.draw_control)
                 self.draw_control_added = True
-                self.stac_widget.layout.display = 'none'
-                self.layers_widget.layout.display = 'none'
+                self.stac_widget.layout.display = "none"
+                self.layers_widget.layout.display = "none"
                 self.buttons["stac"].value = False
                 self.buttons["layers"].value = False
         if not b["new"]:
-            if self.aoi_widget.layout.display == 'block':
-                self.aoi_widget.layout.display = 'none'
+            if self.aoi_widget.layout.display == "block":
+                self.aoi_widget.layout.display = "none"
                 if self.draw_control_added:
                     self.remove(self.draw_control)
                     self.draw_control_added = False
 
     def create_aoi_widget(self):
-        aoi_widget = HBox(layout=Layout(width="300px", padding="0px 6px 2px 6px", margin="0px 2px 2px 2px"))        
-        aoi_widget.layout.flex_flow="column"
-        aoi_widget.layout.min_width="300px"
-        aoi_widget.layout.max_height="360px"
-        aoi_widget.layout.overflow="auto"
+        aoi_widget = HBox(
+            layout=Layout(
+                width="300px", padding="0px 6px 2px 6px", margin="0px 2px 2px 2px"
+            )
+        )
+        aoi_widget.layout.flex_flow = "column"
+        aoi_widget.layout.min_width = "300px"
+        aoi_widget.layout.max_height = "360px"
+        aoi_widget.layout.overflow = "auto"
 
         aoi_widget_desc = HTML(
-            value="<h4><b>Polygon</b></h4>", 
+            value="<h4><b>Polygon</b></h4>",
         )
         aoi_html = HTML(
             value="<code>Waiting for area of interest...</code>",
             description="",
-        )                
+        )
         aoi_clear_button = Button(
             description="Clear AOI Polygon",
             tooltip="Clear AOI Polygon",
@@ -186,97 +211,97 @@ class StacIpyleaflet(Map):
         )
 
         aoi_widget.children = [aoi_widget_desc, aoi_html, aoi_clear_button]
-        aoi_widget.layout.display ='none'
+        aoi_widget.layout.display = "none"
 
         return aoi_widget
-    
-    def create_layers_widget(self):
-        layers_widget = Box(style= { "max-width: 420px" })        
-        layers_widget.layout.flex_flow="column"
-        layers_widget.layout.max_height="360px"
-        layers_widget.layout.overflow="auto"
 
-        tab_headers = ['Biomass Layers', 'Basemaps']
+    def create_layers_widget(self):
+        layers_widget = Box(style={"max-width: 420px"})
+        layers_widget.layout.flex_flow = "column"
+        layers_widget.layout.max_height = "360px"
+        layers_widget.layout.overflow = "auto"
+
+        tab_headers = ["Biomass Layers", "Basemaps"]
         tab_children = []
         tab_widget = Tab()
 
         out = Output()
         display(out)
 
-        
-        opacity_values = [i*10 for i in range(10+1)]  # [0.001, 0.002, ...]
-        
+        opacity_values = [i * 10 for i in range(10 + 1)]  # [0.001, 0.002, ...]
+
         def handle_basemap_opacity_change(change):
             selected_bm = self.basemap_selection_dd.value
             for l in self.layers:
                 if l.base:
                     if l.name == selected_bm:
-                        l.opacity = change['new']/100
+                        l.opacity = change["new"] / 100
 
         def handle_layer_opacity_change(change):
             selected_layer = change.owner.description
             for l in self.layers:
                 if l.name == selected_layer:
-                    l.opacity = change['new']
+                    l.opacity = change["new"]
 
-        for tab in tab_headers:     
-            tab_content = VBox()    
+        for tab in tab_headers:
+            tab_content = VBox()
             listed_layers = []
-            # sort layers by name property       
+            # sort layers by name property
             layers_in_drawing_order = [l for l in self.layers]
-            layerlist_layers = sorted(layers_in_drawing_order, key=lambda x: x.name, reverse=False)
-            if tab == "Biomass Layers":       
-                layers_hbox = []                      
-                for layer in layerlist_layers:            
+            layerlist_layers = sorted(
+                layers_in_drawing_order, key=lambda x: x.name, reverse=False
+            )
+            if tab == "Biomass Layers":
+                layers_hbox = []
+                for layer in layerlist_layers:
                     # check if layer name is a basemap
-                    if not layer.base:            
+                    if not layer.base:
                         layer_checkbox = Checkbox(
-                            value=layer.visible,
-                            description=layer.name,
-                            indent=False
+                            value=layer.visible, description=layer.name, indent=False
                         )
                         jslink((layer_checkbox, "value"), (layer, "visible"))
-                        hbox = HBox(
-                            [layer_checkbox]
-                        )
+                        hbox = HBox([layer_checkbox])
                         layer_opacity_slider = SelectionSlider(
                             value=1,
-                            options=[("%g"%i, i/100) for i in opacity_values],
+                            options=[("%g" % i, i / 100) for i in opacity_values],
                             description=f"{layer.name}",
                             continuous_update=False,
-                            orientation='horizontal',
-                            layout=Layout(margin="-12px 0 4px 0")
+                            orientation="horizontal",
+                            layout=Layout(margin="-12px 0 4px 0"),
                         )
                         layer_opacity_slider.style.description_width = "0px"
                         layer_opacity_slider.style.handle_color = self.accent_color
-                        layer_opacity_slider.observe(handle_layer_opacity_change, names="value") 
+                        layer_opacity_slider.observe(
+                            handle_layer_opacity_change, names="value"
+                        )
                         layers_hbox.append(hbox)
                         layers_hbox.append(layer_opacity_slider)
                         listed_layers.append(layer.name)
                 tab_content.children = [VBox(layers_hbox)]
                 tab_children.append(tab_content)
-            elif tab == "Basemaps":       
+            elif tab == "Basemaps":
                 basemaps = []
-                for layer in layerlist_layers:            
+                for layer in layerlist_layers:
                     # check if layer is a basemap
                     if layer.base:
                         basemaps.append((f"{layer.name}", f"{layer.name}"))
-                                
+
                 def on_change(change):
-                    if change['type'] == 'change' and change['name'] == 'value':
+                    if change["type"] == "change" and change["name"] == "value":
                         with out:
                             out.clear_output()
-                            #print("changed to %s" % change['new'])
+                            # print("changed to %s" % change['new'])
                             for l in self.layers:
                                 if l.base:
-                                    if l.name == change['new']:                                      
-                                        l.opacity = basemap_opacity_slider.value/100
-                                        l.visible = True        
+                                    if l.name == change["new"]:
+                                        l.opacity = basemap_opacity_slider.value / 100
+                                        l.visible = True
                                     else:
                                         l.visible = False
                             return None
-                dropdown = Dropdown(options=basemaps, value="Open Street Map")         
-                self.basemap_selection_dd = dropdown       
+
+                dropdown = Dropdown(options=basemaps, value="Open Street Map")
+                self.basemap_selection_dd = dropdown
                 dropdown.observe(on_change)
 
                 basemap_opacity_slider = IntSlider(
@@ -284,17 +309,19 @@ class StacIpyleaflet(Map):
                     min=0,
                     max=100,
                     step=10,
-                    description='% Opacity:',
-                    #disabled=False,
-                    style={'bar_color': 'maroon'},
+                    description="% Opacity:",
+                    # disabled=False,
+                    style={"bar_color": "maroon"},
                     continuous_update=False,
-                    orientation='horizontal',
+                    orientation="horizontal",
                     readout=True,
-                    readout_format='d'
-                )                
+                    readout_format="d",
+                )
 
                 basemap_opacity_slider.style.handle_color = self.accent_color
-                basemap_opacity_slider.observe(handle_basemap_opacity_change, names="value")
+                basemap_opacity_slider.observe(
+                    handle_basemap_opacity_change, names="value"
+                )
                 tab_content.children = [dropdown, basemap_opacity_slider]
                 tab_children.append(tab_content)
 
@@ -302,37 +329,44 @@ class StacIpyleaflet(Map):
         tab_widget.titles = tab_headers
         print(tab_widget.box_style)
         layers_widget.children = [tab_widget]
-        layers_widget.layout.display ='none'
+        layers_widget.layout.display = "none"
         return layers_widget
-    
 
     def add_custom_tools(self):
         # Create custom map widgets
         self.layers_widget = self.create_layers_widget()
         self.stac_widget = StacDiscoveryWidget.template(self)
-        self.aoi_widget = self.create_aoi_widget()       
+        self.aoi_widget = self.create_aoi_widget()
 
         layers_widget = VBox([self.layers_widget])
         stac_widget = VBox([self.stac_widget])
         aoi_widget = VBox([self.aoi_widget])
 
-        layers_control = WidgetControl(widget=layers_widget, position="topright", id="layers_widget")
-        stack_control = WidgetControl(widget=stac_widget, position="topright", id="stac_widget")
-        aoi_control = WidgetControl(widget=aoi_widget, position="topright", id="aoi_widget")
-        
+        layers_control = WidgetControl(
+            widget=layers_widget, position="topright", id="layers_widget"
+        )
+        stack_control = WidgetControl(
+            widget=stac_widget, position="topright", id="stac_widget"
+        )
+        aoi_control = WidgetControl(
+            widget=aoi_widget, position="topright", id="aoi_widget"
+        )
+
         self.add(layers_control)
         self.add(stack_control)
         self.add(aoi_control)
 
-    def add_biomass_layers(self):        
-        biomass_file = files('stac_ipyleaflet.data').joinpath('biomass-layers.csv')
-        with open(biomass_file, newline='') as f:
+    def add_biomass_layers(self):
+        biomass_file = files("stac_ipyleaflet.data").joinpath("biomass-layers.csv")
+        with open(biomass_file, newline="") as f:
             csv_reader = csv.reader(f)
             next(csv_reader, None)  # skip the headers
             sorted_csv = sorted(csv_reader, key=lambda row: row[0], reverse=True)
             for row in sorted_csv:
                 name, tile_url = row[0], row[1]
-                tile_layer = TileLayer(url=tile_url, attribution=name, name=name, visible=False)
+                tile_layer = TileLayer(
+                    url=tile_url, attribution=name, name=name, visible=False
+                )
                 self.add_layer(tile_layer)
 
     def find_layer(self, name: str):
@@ -509,7 +543,7 @@ class StacIpyleaflet(Map):
         self.remove_layer(self.loading_widget_layer)
         self.add_layer(histogram_layer)
         return None """
- 
+
     # generates warning/error popup
     """ def gen_popup_icon(self, msg):
         warning_msg = HTML()

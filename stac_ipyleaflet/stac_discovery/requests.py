@@ -2,6 +2,7 @@ import requests
 import logging
 from stac_ipyleaflet.constants import REQUEST_TIMEOUT
 
+
 def make_get_request(url, params=None, timeout=REQUEST_TIMEOUT):
     """GET Request wrapper to watch for and catch specific errors
     Args:
