@@ -78,9 +78,7 @@ print("Total collections: ", len(output_collections))
 print()
 df = pd.DataFrame(output_collections)
 df.sort_values(by=["id"], inplace=True)
-df.drop(columns=["metadata"]).to_csv(
-    "nasa_maap_stac.tsv", index=False, sep="\t"
-)
+df.drop(columns=["metadata"]).to_csv("nasa_maap_stac.tsv", index=False, sep="\t")
 
 with open("nasa_maap_stac.json", "w") as f:
     json.dump(df.to_dict("records"), f, indent=4)
