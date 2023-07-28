@@ -63,6 +63,7 @@ class StacIpyleaflet(Map):
         self.inspect_control_added = False
         self.aoi_coordinates = []
         self.aoi_bbox = ()
+        self.applied_layers = []
 
         gif_file = files("stac_ipyleaflet.data").joinpath("loading.gif")
         with open(gif_file, "rb") as f:
@@ -145,7 +146,7 @@ class StacIpyleaflet(Map):
         )
         display(buttons_box)
 
-        self.add_biomass_layers()
+        self.add_biomass_layers_options()
         self.add_custom_tools()
         self.draw_control = DrawControlWidget.template(self)
         self.inspect_control = InspectControlWidget.template(self)
@@ -308,6 +309,7 @@ class StacIpyleaflet(Map):
 
         return inspect_widget
 
+    # NOTE-SANDRA: Possibly move into its own child class file
     def create_layers_widget(self):
         layers_widget = Box(style={"max-width: 420px"})
         layers_widget.layout.flex_flow = "column"
@@ -323,6 +325,13 @@ class StacIpyleaflet(Map):
 
         opacity_values = [i * 10 for i in range(10 + 1)]  # [0.001, 0.002, ...]
 
+        def layer_checkbox_changed(event):
+            if event.type == "change":
+                if event.owner.value:
+                    self.applied_layers.append(event.owner.description)
+                if not event.owner.value:
+                    self.applied_layers.remove(event.owner.description)
+
         def handle_basemap_opacity_change(change):
             selected_bm = self.basemap_selection_dd.value
             for l in self.layers:
@@ -332,6 +341,8 @@ class StacIpyleaflet(Map):
 
         def handle_layer_opacity_change(change):
             selected_layer = change.owner.description
+            if selected_layer not in self.applied_layers:
+                return
             for l in self.layers:
                 if l.name == selected_layer:
                     l.opacity = change["new"]
@@ -353,11 +364,12 @@ class StacIpyleaflet(Map):
                             value=layer.visible, description=layer.name, indent=False
                         )
                         jslink((layer_checkbox, "value"), (layer, "visible"))
+                        layer_checkbox.observe(layer_checkbox_changed, names="value")
                         hbox = HBox([layer_checkbox])
                         layer_opacity_slider = SelectionSlider(
                             value=1,
                             options=[("%g" % i, i / 100) for i in opacity_values],
-                            description=f"{layer.name}",
+                            description=layer.name,
                             continuous_update=False,
                             orientation="horizontal",
                             layout=Layout(margin="-12px 0 4px 0"),
@@ -455,7 +467,7 @@ class StacIpyleaflet(Map):
         self.add(aoi_control)
         self.add(inspect_control)
 
-    def add_biomass_layers(self):
+    def add_biomass_layers_options(self):
         biomass_file = files("stac_ipyleaflet.data").joinpath("biomass-layers.csv")
         with open(biomass_file, newline="") as f:
             csv_reader = csv.reader(f)
