@@ -14,7 +14,18 @@ class DrawControlWidget:
             circlemarker={},
             polygon={},
             polyline={},
+            marker={},
         )
+
+        # Add rectangle draw control for bounding box
+        draw_control.rectangle = {
+            "shapeOptions": {
+                "fillColor": "transparent",
+                "color": "#333",
+                "fillOpacity": 1.0,
+            },
+            "repeatMode": False,
+        }
 
         aoi_coords = main.aoi_widget.children[1]
         aoi_clear_button = main.aoi_widget.children[2]
@@ -69,16 +80,6 @@ class DrawControlWidget:
 
         draw_control.on_draw(callback=handle_draw)
         draw_control.observe(value_changed, names=["value"])
-
-        # Add rectangle draw control for bounding box
-        draw_control.rectangle = {
-            "shapeOptions": {
-                "fillColor": "transparent",
-                "color": "#333",
-                "fillOpacity": 1.0,
-            },
-            "repeatMode": False,
-        }
         draw_control.output = bbox_out
 
         return draw_control

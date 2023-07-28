@@ -18,6 +18,7 @@ from stac_ipyleaflet.constants import TITILER_ENDPOINT, TITILER_STAC_ENDPOINT
 from stac_ipyleaflet.stac_discovery.stac_widget import StacDiscoveryWidget
 from stac_ipyleaflet.widgets.basemaps import BasemapsWidget
 from stac_ipyleaflet.widgets.draw import DrawControlWidget
+from stac_ipyleaflet.widgets.inspect import InspectControlWidget
 
 
 class StacIpyleaflet(Map):
@@ -27,7 +28,7 @@ class StacIpyleaflet(Map):
 
     raw_input = input
 
-    draw_control: DrawControl
+    # draw_control: DrawControl
     histogram_layer: Popup
     warning_layer: Popup = None
     loading_widget_layer: Popup = None
@@ -59,6 +60,7 @@ class StacIpyleaflet(Map):
         self.selected_data = []
         self.histogram_layer = None
         self.draw_control_added = False
+        self.inspect_control_added = False
         self.aoi_coordinates = []
         self.aoi_bbox = ()
 
@@ -80,6 +82,7 @@ class StacIpyleaflet(Map):
         main_button_layout = Layout(
             width="120px", height="35px", border="1px solid #4682B4"
         )
+        # @NOTE-SANDRA: Break these button creations out...
         draw_btn = ToggleButton(
             description="Draw", icon="square-o", layout=main_button_layout
         )
@@ -90,6 +93,17 @@ class StacIpyleaflet(Map):
             self.toggle_draw_widget_display, type="change", names=["value"]
         )
         self.buttons["draw"] = draw_btn
+
+        inspect_btn = ToggleButton(
+            description="Inspect", icon="square-o", layout=main_button_layout
+        )
+        inspect_btn.style.text_color = self.accent_color
+        inspect_btn.style.button_color = "transparent"
+        inspect_btn.tooltip = "Draw Area of Interest"
+        inspect_btn.observe(
+            self.toggle_inspect_widget_display, type="change", names=["value"]
+        )
+        self.buttons["inspect"] = inspect_btn
 
         layers_btn = ToggleButton(
             description="Layers", icon="map-o", layout=main_button_layout
@@ -126,13 +140,15 @@ class StacIpyleaflet(Map):
             height="50px",
         )
         buttons_box = HBox(
-            children=[draw_btn, layers_btn, stac_btn], layout=buttons_box_layout
+            children=[inspect_btn, draw_btn, layers_btn, stac_btn],
+            layout=buttons_box_layout,
         )
         display(buttons_box)
 
         self.add_biomass_layers()
         self.add_custom_tools()
         self.draw_control = DrawControlWidget.template(self)
+        self.inspect_control = InspectControlWidget.template(self)
 
         return None
 
@@ -145,9 +161,13 @@ class StacIpyleaflet(Map):
                 self.aoi_widget.layout.display = "none"
                 self.buttons["stac"].value = False
                 self.buttons["draw"].value = False
+                self.buttons["inspect"].value = False
                 if self.draw_control_added:
                     self.remove(self.draw_control)
                     self.draw_control_added = False
+                if self.inspect_control_added:
+                    self.remove(self.inspect_control)
+                    self.inspect_control_added = False
         if not b["new"]:
             if self.layers_widget.layout.display == "block":
                 self.layers_widget.layout.display = "none"
@@ -160,9 +180,13 @@ class StacIpyleaflet(Map):
                 self.aoi_widget.layout.display = "none"
                 self.buttons["layers"].value = False
                 self.buttons["draw"].value = False
+                self.buttons["inspect"].value = False
                 if self.draw_control_added:
                     self.remove(self.draw_control)
                     self.draw_control_added = False
+                if self.inspect_control_added:
+                    self.remove(self.inspect_control)
+                    self.inspect_control_added = False
         if not b["new"]:
             if self.stac_widget.layout.display == "block":
                 self.stac_widget.layout.display = "none"
@@ -171,18 +195,51 @@ class StacIpyleaflet(Map):
         if b["new"]:
             if self.aoi_widget.layout.display == "none":
                 self.aoi_widget.layout.display = "block"
+                if self.inspect_control_added:
+                    self.remove(self.inspect_control)
+                    self.inspect_control_added = False
                 self.add_control(self.draw_control)
                 self.draw_control_added = True
                 self.stac_widget.layout.display = "none"
                 self.layers_widget.layout.display = "none"
+                self.inspect_widget.layout.display = "none"
                 self.buttons["stac"].value = False
                 self.buttons["layers"].value = False
+                self.buttons["inspect"].value = False
         if not b["new"]:
             if self.aoi_widget.layout.display == "block":
                 self.aoi_widget.layout.display = "none"
                 if self.draw_control_added:
                     self.remove(self.draw_control)
                     self.draw_control_added = False
+                if self.inspect_control_added:
+                    self.remove(self.inspect_control)
+                    self.inspect_control_added = False
+
+    def toggle_inspect_widget_display(self, b):
+        if b["new"]:
+            if self.inspect_widget.layout.display == "none":
+                self.inspect_widget.layout.display = "block"
+                if self.draw_control_added:
+                    self.remove(self.draw_control)
+                    self.draw_control_added = False
+                self.add_control(self.inspect_control)
+                self.inspect_control_added = True
+                self.stac_widget.layout.display = "none"
+                self.layers_widget.layout.display = "none"
+                self.aoi_widget.layout.display = "none"
+                self.buttons["stac"].value = False
+                self.buttons["layers"].value = False
+                self.buttons["draw"].value = False
+        if not b["new"]:
+            if self.inspect_widget.layout.display == "block":
+                self.inspect_widget.layout.display = "none"
+                if self.draw_control_added:
+                    self.remove(self.draw_control)
+                    self.draw_control_added = False
+                if self.inspect_control_added:
+                    self.remove(self.inspect_control)
+                    self.inspect_control_added = False
 
     def create_aoi_widget(self):
         aoi_widget = HBox(
@@ -214,6 +271,42 @@ class StacIpyleaflet(Map):
         aoi_widget.layout.display = "none"
 
         return aoi_widget
+
+    # NOTE-SANDRA: Create dynamic widget function
+    def create_inspect_widget(self):
+        inspect_widget = HBox(
+            layout=Layout(
+                width="300px", padding="0px 6px 2px 6px", margin="0px 2px 2px 2px"
+            )
+        )
+        inspect_widget.layout.flex_flow = "column"
+        inspect_widget.layout.min_width = "300px"
+        inspect_widget.layout.max_height = "360px"
+        inspect_widget.layout.overflow = "auto"
+
+        inspect_widget_desc = HTML(
+            value="<h4><b>Marker</b></h4>",
+        )
+        inspect_widget_html = HTML(
+            value="<code>Waiting for points of interest...</code>",
+            description="",
+        )
+
+        inspect_widget_button = Button(
+            description="Clear AOI Polygon",
+            tooltip="Clear AOI Polygon",
+            icon="trash",
+            disabled=True,
+        )
+
+        inspect_widget.children = [
+            inspect_widget_desc,
+            inspect_widget_html,
+            inspect_widget_button,
+        ]
+        inspect_widget.layout.display = "none"
+
+        return inspect_widget
 
     def create_layers_widget(self):
         layers_widget = Box(style={"max-width: 420px"})
@@ -337,10 +430,12 @@ class StacIpyleaflet(Map):
         self.layers_widget = self.create_layers_widget()
         self.stac_widget = StacDiscoveryWidget.template(self)
         self.aoi_widget = self.create_aoi_widget()
+        self.inspect_widget = self.create_inspect_widget()
 
         layers_widget = VBox([self.layers_widget])
         stac_widget = VBox([self.stac_widget])
         aoi_widget = VBox([self.aoi_widget])
+        inspect_widget = VBox([self.inspect_widget])
 
         layers_control = WidgetControl(
             widget=layers_widget, position="topright", id="layers_widget"
@@ -351,10 +446,14 @@ class StacIpyleaflet(Map):
         aoi_control = WidgetControl(
             widget=aoi_widget, position="topright", id="aoi_widget"
         )
+        inspect_control = WidgetControl(
+            widget=inspect_widget, position="topright", id="inspect_widget"
+        )
 
         self.add(layers_control)
         self.add(stack_control)
         self.add(aoi_control)
+        self.add(inspect_control)
 
     def add_biomass_layers(self):
         biomass_file = files("stac_ipyleaflet.data").joinpath("biomass-layers.csv")
