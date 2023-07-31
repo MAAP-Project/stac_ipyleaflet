@@ -1,28 +1,25 @@
-from ipyleaflet import DrawControl, GeoJSON, MarkerCluster, Marker, DrawControl
-from ipywidgets import Box, Output, Checkbox, Layout
+from ipyleaflet import DrawControl, MarkerCluster, Marker, DrawControl
+from urllib.parse import urlparse, parse_qs
+from typing import List
 
-# from stac_ipyleaflet.core import StacIpyleaflet
-# from ..constants import StacIpyleaflet
+
+class COGRequestedData:
+    coordinates: List[float]
+    values: List[float]
+    band_names: List[str]
+
+
+class LayerData:
+    layer_name: str
+    data: COGRequestedData
 
 
 class InspectControlWidget:
-    def __init__(self, applied_layers):
-        super().__init__()
-        # self.aoi_widget = aoi_widget
-        # self.find_layer = find_layer
-        # self.remove_layer = remove_layer
-        # self.add_layer = add_layer
-        self.applied_layers = applied_layers
-        self.marker_cluster = MarkerCluster(name="Inspector Markers")
-        self.inspector_add_marker = Checkbox(
-            description="Add Marker at clicked location",
-            value=True,
-            indent=False,
-            layout=Layout(padding="0px 6px 2px 6px", width="300px"),
-        )
-        # self.draw_control = DrawControl()
-
-    def template(self):
+    def template(
+        self, applied_layers, interact_widget, make_get_request, titiler_endpoint
+    ):
+        main = self
+        marker_cluster = list(MarkerCluster().markers)
         draw_control = DrawControl(
             edit=False,
             remove=False,
@@ -31,7 +28,7 @@ class InspectControlWidget:
             polyline={},
             rectangle={},
         )
-        # draw_control.rectangle = {}
+
         draw_control.marker = {
             "shapeOptions": {
                 "fillColor": "transparent",
@@ -41,67 +38,100 @@ class InspectControlWidget:
             "repeatMode": False,
         }
 
+        interact_tab = (
+            interact_widget.children[0].children[0].children[0].children[0].children
+        )
+        point_coords = interact_tab[1]
+        clear_button = interact_tab[2]
+
+        def get_visible_layers_data(coordinates) -> List[LayerData]:
+            visible_layers_data = []
+            cog_partial_request_path = (
+                f"{titiler_endpoint}/cog/point/{coordinates[0]},{coordinates[1]}?url="
+            )
+            # mosaics_partial_request_path = f"{titiler_endpoint}/mosaicjson/point/{coordinates[0]},{coordinates[1]}"
+            # mosaics_partial_request_path = f"{titiler_endpoint}/mosaicjson[74c9966e-e865-4c6b-bfe8-d12130f9d6ad]/point/{coordinates[0]},{coordinates[1]}"
+            # mosaics_partial_request_path = f"{cog_partial_request_path}s3://nasa-maap-data-store/file-staging/nasa-map/icesat2-boreal/boreal_agb_202302031675450331_0225.tif"
+            mosaics_partial_request_path = f"{cog_partial_request_path}s3://nasa-maap-data-store/file-staging/nasa-map/NASA_JPL_global_agb_mean_2020/global_008_06dc_agb_mean_prediction_2020_mosaic_veg_gfccorr_scale1_SAmerica_cog.tif"
+            for layer in applied_layers:
+                if "/cog" in layer.url:
+                    parsed_url = urlparse(layer.url)
+                    parsed_query = parse_qs(parsed_url.query)
+                    url = parsed_query["url"][0]
+                    print(f"cog_url: {cog_partial_request_path}{url}")
+                    data = make_get_request(f"{cog_partial_request_path}{url}")
+                    if data:
+                        visible_layers_data.append(
+                            {"layer_name": layer.name, "data": data.json()}
+                        )
+                # @NOTE-SANDRA: This is currently not working
+                if "/mosaics" in layer.url:
+                    data = make_get_request(mosaics_partial_request_path)
+                    print(f"mosaic_url: {mosaics_partial_request_path}")
+                    print(f"mosaic_data: {data}")
+                    if data:
+                        visible_layers_data.append(
+                            {"layer_name": layer.name, "data": data.json()}
+                        )
+            print(f"visible_layers_data: {visible_layers_data}")
+            return visible_layers_data
+
+        def display_data(layers_data: LayerData):
+            def create_html_template(layer_name, coordinates, values, band_names):
+                template = f"""
+                    <p>
+                        <b>
+                            {layer_name}
+                        </b>
+                    </p>
+                    <ul>
+                        <li>
+                            Coordinates: {coordinates}
+                        </li>
+                        <li>
+                            Values: {values}
+                        </li>
+                        <li>
+                            Bands: {band_names}
+                        </li>
+                    </ul>
+                """
+                return template
+
+            for layer in layers_data:
+                point_coords.value += create_html_template(
+                    layer["layer_name"],
+                    layer["data"]["coordinates"],
+                    layer["data"]["values"],
+                    layer["data"]["band_names"],
+                )
+            return
+
         def handle_interaction(self, action, geo_json, **kwargs):
-            print("handling interaction")
-            # if not hasattr(self, "inspector_add_marker"):
-            #     inspector_add_marker = Checkbox(
-            #         description="Add Marker at clicked location",
-            #         value=True,
-            #         indent=False,
-            #         layout=Layout(padding="0px 6px 2px 6px", width="300px"),
-            #     )
-            #     # setattr(m, "inspector_add_marker", inspector_add_marker)
-            #     self.inspector_add_marker = inspector_add_marker
-            # add_marker = self.inspector_add_marker
-            # latlon = kwargs.get("coordinates")
-            # lat = round(latlon[0], 4)
-            # lon = round(latlon[1], 4)
+            def handle_clear(event):
+                self.clear()  # NOTE: This will likely clear the aoi drawing as well...
+                point_coords.value = "<code>Waiting for points of interest...</code>"
+                clear_button.disabled = True
+                return
+
             self.coordinates = []
 
-            print(f"action here: ", action)
-
-            if kwargs.get("type") == "click":
-                self.default_style = {"cursor": "wait"}
-                # with output:
-                #     output.outputs = ()
-                #     print("Getting pixel value ...")
-
-                #     layer_dict = m.cog_layer_dict[dropdown.value]
-
-                if self.applied_layers:
-                    # if bands_chk.value:
-                    #     assets = layer_dict["assets"]
-                    # else:
-                    # assets = None
-                    assets = None
-
-                    # @NOTE-SANDRA: Implement call to get pixel value
-                    # result = stac_pixel_value(
-                    #     lon,
-                    #     lat,
-                    #     layer_dict["url"],
-                    #     layer_dict["collection"],
-                    #     layer_dict["item"],
-                    #     assets,
-                    #     layer_dict["titiler_endpoint"],
-                    #     verbose=False,
-                    # )
-                    result = "test"
-                    if result is not None:
-                        # with output:
-                        #     output.outputs = ()
-                        #     print(f"lat/lon: {lat:.4f}, {lon:.4f}\n")
-                        #     for key in result:
-                        #         print(f"{key}: {result[key]}")
-
-                        #     result["latitude"] = lat
-                        #     result["longitude"] = lon
-                        #     result["label"] = label.value
-                        #     m.pixel_values.append(result)
-                        if add_marker.value:
-                            markers = list(self.marker_cluster.markers)
-                            markers.append(Marker(location=latlon))
-                            self.marker_cluster.markers = markers
+            if action == "created":
+                if geo_json["geometry"] and geo_json["geometry"]["type"] == "Point":
+                    self.coordinates = geo_json["geometry"]["coordinates"]
+                    marker_cluster.append(
+                        Marker(location=(self.coordinates[0], self.coordinates[1]))
+                    )
+                    print(f"applied_layers: {applied_layers}")
+                    point_coords.value = f"<p><b>Coordinates:</b></p><code>{self.coordinates}</code><br/>"
+                    if len(applied_layers):
+                        layers_data = get_visible_layers_data(self.coordinates)
+                        if layers_data:
+                            display_data(layers_data)
+            clear_button.disabled = False
+            clear_button.on_click(handle_clear)
+            return
 
         draw_control.on_draw(callback=handle_interaction)
+
         return draw_control

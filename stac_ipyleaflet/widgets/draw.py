@@ -2,6 +2,7 @@ from ipyleaflet import DrawControl, GeoJSON
 from ipywidgets import Box, Output
 
 
+# TODO: Fix linting errors caused by inferred inheritance and just pass in params instead
 class DrawControlWidget:
     def template(self, **kwargs) -> Box(style={"max_height: 200px"}):
         main = self
@@ -27,8 +28,15 @@ class DrawControlWidget:
             "repeatMode": False,
         }
 
-        aoi_coords = main.aoi_widget.children[1]
-        aoi_clear_button = main.aoi_widget.children[2]
+        area_tab = (
+            main.interact_widget.children[0]
+            .children[1]
+            .children[0]
+            .children[0]
+            .children
+        )
+        aoi_coords = area_tab[1]
+        aoi_clear_button = area_tab[2]
 
         def handle_clear(self):
             draw_layer = main.find_layer("draw_layer")
@@ -75,11 +83,7 @@ class DrawControlWidget:
 
             return
 
-        def value_changed(change):
-            print("CHANGE", change)
-
         draw_control.on_draw(callback=handle_draw)
-        draw_control.observe(value_changed, names=["value"])
         draw_control.output = bbox_out
 
         return draw_control
