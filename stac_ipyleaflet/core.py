@@ -528,6 +528,7 @@ class StacIpyleaflet(Map):
                 **kwargs,
             )
             self.add_layer(tile_layer)
+            return tile_layer
 
         except Exception as e:
             logging.error("Failed to add the specified TileLayer.")
