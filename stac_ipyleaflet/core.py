@@ -213,7 +213,7 @@ class StacIpyleaflet(Map):
                     self.remove(self.inspect_control)
                     self.inspect_control_added = False
 
-    def create_aoi_widget(self):
+    def create_aoi_tab(self):
         aoi_widget_desc = HTML(
             value="<h4><b>Polygon</b></h4>",
         )
@@ -230,14 +230,11 @@ class StacIpyleaflet(Map):
         )
         aoi_widget = HBox([aoi_widget_desc, aoi_html, aoi_clear_button])
         aoi_widget.layout.flex_flow = "column"
-        aoi_widget.layout.min_width = "300px"
-        aoi_widget.layout.max_height = "360px"
-        aoi_widget.layout.overflow = "auto"
 
         return aoi_widget
 
     # @NOTE: Create dynamic widget function
-    def create_inspect_widget(self):
+    def create_inspect_tab(self):
         inspect_widget_desc = HTML(
             value="<h4>Marker</h4>",
         )
@@ -262,9 +259,6 @@ class StacIpyleaflet(Map):
         )
 
         inspect_widget.layout.flex_flow = "column"
-        inspect_widget.layout.min_width = "300px"
-        inspect_widget.layout.max_height = "360px"
-        inspect_widget.layout.overflow = "auto"
 
         return inspect_widget
 
@@ -301,11 +295,11 @@ class StacIpyleaflet(Map):
         for tab in tab_headers:
             tab_content = VBox()
             if tab == "Point":
-                hbox = self.create_inspect_widget()
+                hbox = self.create_inspect_tab()
                 tab_content.children = [VBox([hbox])]
                 tab_children.append(tab_content)
             elif tab == "Area":
-                hbox = self.create_aoi_widget()
+                hbox = self.create_aoi_tab()
                 tab_content.children = [VBox([hbox])]
                 tab_children.append(tab_content)
         tab_widget.children = tab_children
@@ -518,6 +512,8 @@ class StacIpyleaflet(Map):
             kwargs["max_zoom"] = 100
         if "max_native_zoom" not in kwargs:
             kwargs["max_native_zoom"] = 100
+        if "collection" in kwargs:
+            print(f'COLLECTIONHERE: {kwargs["collection"]}')
         try:
             tile_layer = TileLayer(
                 url=url,

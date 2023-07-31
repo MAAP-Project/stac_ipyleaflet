@@ -827,7 +827,7 @@ class StacDiscoveryWidget:
                                     self.stac_data["layer_added"] = False
                                 applied_tile_layer = self.add_tile_layer(
                                     url=tile_url,
-                                    name=items_dropdown.value,
+                                    name=f'{collections_dropdown.value}, {items_dropdown.value}',
                                     attribution=items_dropdown.value,
                                 )
                                 self.applied_layers.append(applied_tile_layer)
