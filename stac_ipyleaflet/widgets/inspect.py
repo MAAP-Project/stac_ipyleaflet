@@ -31,11 +31,6 @@ class InspectControlWidget:
         )
 
         draw_control.marker = {
-            "shapeOptions": {
-                "fillColor": "transparent",
-                "color": "#333",
-                "fillOpacity": 1.0,
-            },
             "repeatMode": False,
         }
 
@@ -112,11 +107,6 @@ class InspectControlWidget:
                     geojson_layer = GeoJSON(
                         name="draw_layer",
                         data=geo_json,
-                        style={
-                            "fillColor": "transparent",
-                            "color": "#333",
-                            "weight": 3,
-                        },
                     )
                     main.add_layer(geojson_layer)
                     self.coordinates = geo_json["geometry"]["coordinates"]

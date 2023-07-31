@@ -512,8 +512,6 @@ class StacIpyleaflet(Map):
             kwargs["max_zoom"] = 100
         if "max_native_zoom" not in kwargs:
             kwargs["max_native_zoom"] = 100
-        if "collection" in kwargs:
-            print(f'COLLECTIONHERE: {kwargs["collection"]}')
         try:
             tile_layer = TileLayer(
                 url=url,
