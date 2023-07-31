@@ -137,6 +137,7 @@ class StacIpyleaflet(Map):
         self.add_biomass_layers_options()
         self.add_custom_tools()
 
+        # @TODO-SANDRA: Look at how these are being passed in again
         self.inspect_control = InspectControlWidget.template(
             self,
             self.applied_layers,
@@ -238,7 +239,7 @@ class StacIpyleaflet(Map):
     # NOTE-SANDRA: Create dynamic widget function
     def create_inspect_widget(self):
         inspect_widget_desc = HTML(
-            value="<h4><b>Marker</b></h4>",
+            value="<h4>Marker</h4>",
         )
         inspect_widget_html = HTML(
             value="<code>Waiting for points of interest...</code>",

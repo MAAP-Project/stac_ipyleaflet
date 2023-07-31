@@ -1,4 +1,4 @@
-from ipyleaflet import DrawControl, MarkerCluster, Marker, DrawControl
+from ipyleaflet import DrawControl, MarkerCluster, Marker, DrawControl, GeoJSON
 from urllib.parse import urlparse, parse_qs
 from typing import List
 
@@ -14,12 +14,13 @@ class LayerData:
     data: COGRequestedData
 
 
+# @NOTE: This should be an extension of the IPYLEAFLET Class. Currently it is just being passed
+# in instead due to import errors
 class InspectControlWidget:
     def template(
         self, applied_layers, interact_widget, make_get_request, titiler_endpoint
     ):
         main = self
-        marker_cluster = list(MarkerCluster().markers)
         draw_control = DrawControl(
             edit=False,
             remove=False,
@@ -41,7 +42,7 @@ class InspectControlWidget:
         interact_tab = (
             interact_widget.children[0].children[0].children[0].children[0].children
         )
-        point_coords = interact_tab[1]
+        point_data = interact_tab[1]
         clear_button = interact_tab[2]
 
         def get_visible_layers_data(coordinates) -> List[LayerData]:
@@ -77,6 +78,8 @@ class InspectControlWidget:
             return visible_layers_data
 
         def display_data(layers_data: LayerData):
+            point_data.value = ""
+
             def create_html_template(layer_name, coordinates, values, band_names):
                 template = f"""
                     <p>
@@ -99,7 +102,7 @@ class InspectControlWidget:
                 return template
 
             for layer in layers_data:
-                point_coords.value += create_html_template(
+                point_data.value += create_html_template(
                     layer["layer_name"],
                     layer["data"]["coordinates"],
                     layer["data"]["values"],
@@ -109,8 +112,9 @@ class InspectControlWidget:
 
         def handle_interaction(self, action, geo_json, **kwargs):
             def handle_clear(event):
-                self.clear()  # NOTE: This will likely clear the aoi drawing as well...
-                point_coords.value = "<code>Waiting for points of interest...</code>"
+                draw_layer = main.find_layer("draw_layer")
+                main.remove_layer(draw_layer)
+                point_data.value = "<code>Waiting for points of interest...</code>"
                 clear_button.disabled = True
                 return
 
@@ -118,16 +122,26 @@ class InspectControlWidget:
 
             if action == "created":
                 if geo_json["geometry"] and geo_json["geometry"]["type"] == "Point":
-                    self.coordinates = geo_json["geometry"]["coordinates"]
-                    marker_cluster.append(
-                        Marker(location=(self.coordinates[0], self.coordinates[1]))
+                    geojson_layer = GeoJSON(
+                        name="draw_layer",
+                        data=geo_json,
+                        style={
+                            "fillColor": "transparent",
+                            "color": "#333",
+                            "weight": 3,
+                        },
                     )
+                    main.add_layer(geojson_layer)
+                    self.coordinates = geo_json["geometry"]["coordinates"]
                     print(f"applied_layers: {applied_layers}")
-                    point_coords.value = f"<p><b>Coordinates:</b></p><code>{self.coordinates}</code><br/>"
+
                     if len(applied_layers):
                         layers_data = get_visible_layers_data(self.coordinates)
                         if layers_data:
                             display_data(layers_data)
+                    elif not len(applied_layers):
+                        point_data.value = f"<p><b>Coordinates:</b></p><code>{self.coordinates}</code><br/>"
+            self.clear()
             clear_button.disabled = False
             clear_button.on_click(handle_clear)
             return

@@ -1,8 +1,11 @@
 from ipyleaflet import DrawControl, GeoJSON
 from ipywidgets import Box, Output
 
+# @NOTE: This should be an extension of the IPYLEAFLET Class. Currently it is just being passed
+# in instead due to import errors
 
-# TODO: Fix linting errors caused by inferred inheritance and just pass in params instead
+
+# @TODO: Fix linting errors caused by inferred inheritance and just pass in params instead
 class DrawControlWidget:
     def template(self, **kwargs) -> Box(style={"max_height: 200px"}):
         main = self
