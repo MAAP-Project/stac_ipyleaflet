@@ -50,31 +50,18 @@ class InspectControlWidget:
             cog_partial_request_path = (
                 f"{titiler_endpoint}/cog/point/{coordinates[0]},{coordinates[1]}?url="
             )
-            # mosaics_partial_request_path = f"{titiler_endpoint}/mosaicjson/point/{coordinates[0]},{coordinates[1]}"
-            # mosaics_partial_request_path = f"{titiler_endpoint}/mosaicjson[74c9966e-e865-4c6b-bfe8-d12130f9d6ad]/point/{coordinates[0]},{coordinates[1]}"
-            # mosaics_partial_request_path = f"{cog_partial_request_path}s3://nasa-maap-data-store/file-staging/nasa-map/icesat2-boreal/boreal_agb_202302031675450331_0225.tif"
-            mosaics_partial_request_path = f"{cog_partial_request_path}s3://nasa-maap-data-store/file-staging/nasa-map/NASA_JPL_global_agb_mean_2020/global_008_06dc_agb_mean_prediction_2020_mosaic_veg_gfccorr_scale1_SAmerica_cog.tif"
             for layer in applied_layers:
                 if "/cog" in layer.url:
                     parsed_url = urlparse(layer.url)
                     parsed_query = parse_qs(parsed_url.query)
                     url = parsed_query["url"][0]
-                    print(f"cog_url: {cog_partial_request_path}{url}")
                     data = make_get_request(f"{cog_partial_request_path}{url}")
                     if data:
                         visible_layers_data.append(
                             {"layer_name": layer.name, "data": data.json()}
                         )
-                # @NOTE-SANDRA: This is currently not working
-                if "/mosaics" in layer.url:
-                    data = make_get_request(mosaics_partial_request_path)
-                    print(f"mosaic_url: {mosaics_partial_request_path}")
-                    print(f"mosaic_data: {data}")
-                    if data:
-                        visible_layers_data.append(
-                            {"layer_name": layer.name, "data": data.json()}
-                        )
-            print(f"visible_layers_data: {visible_layers_data}")
+                # @TODO: Add logic to grab point data for "/mosaics" layers here
+                # @NOTE: Blocked until Impact Titiler is updated to access /mosaicsjson/point
             return visible_layers_data
 
         def display_data(layers_data: LayerData):
@@ -133,12 +120,13 @@ class InspectControlWidget:
                     )
                     main.add_layer(geojson_layer)
                     self.coordinates = geo_json["geometry"]["coordinates"]
-                    print(f"applied_layers: {applied_layers}")
 
                     if len(applied_layers):
                         layers_data = get_visible_layers_data(self.coordinates)
                         if layers_data:
                             display_data(layers_data)
+                        else:
+                            point_data.value = f"<p><b>Coordinates:</b></p><code>{self.coordinates}</code><br/>"
                     elif not len(applied_layers):
                         point_data.value = f"<p><b>Coordinates:</b></p><code>{self.coordinates}</code><br/>"
             self.clear()

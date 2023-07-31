@@ -82,7 +82,7 @@ class StacIpyleaflet(Map):
         main_button_layout = Layout(
             width="120px", height="35px", border="1px solid #4682B4"
         )
-        # @NOTE-SANDRA: Break these button creations out...
+        # @NOTE: Break these button creations out...
         interact_btn = ToggleButton(
             description="Interact", icon="pencil", layout=main_button_layout
         )
@@ -236,7 +236,7 @@ class StacIpyleaflet(Map):
 
         return aoi_widget
 
-    # NOTE-SANDRA: Create dynamic widget function
+    # @NOTE: Create dynamic widget function
     def create_inspect_widget(self):
         inspect_widget_desc = HTML(
             value="<h4>Marker</h4>",
@@ -315,7 +315,7 @@ class StacIpyleaflet(Map):
         tab_widget.observe(toggle_interact_tab_change, names="selected_index")
         return interact_widget
 
-    # NOTE-SANDRA: Possibly move into its own child class file
+    # @NOTE: Possibly move into its own child class file
     def create_layers_widget(self):
         layers_widget = Box(style={"max-width: 420px"})
         layers_widget.layout.flex_flow = "column"
