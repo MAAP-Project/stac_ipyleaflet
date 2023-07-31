@@ -137,7 +137,6 @@ class StacIpyleaflet(Map):
         self.add_biomass_layers_options()
         self.add_custom_tools()
 
-        # @TODO-SANDRA: Look at how these are being passed in again
         self.inspect_control = InspectControlWidget.template(
             self,
             self.applied_layers,
