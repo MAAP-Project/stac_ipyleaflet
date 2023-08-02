@@ -1,24 +1,57 @@
 from ipyleaflet import DrawControl, GeoJSON
 from ipywidgets import Box, Output
 
+# @NOTE: This should be an extension of the IPYLEAFLET Class. Currently it is just being passed
+# in instead due to import errors
 
+# @TODO: Fix linting errors caused by inferred inheritance and just pass in params instead
+
+
+# @TODO: Break out shared logic between widgets into a utilities directory
 class DrawControlWidget:
     def template(self, **kwargs) -> Box(style={"max_height: 200px"}):
         main = self
         bbox_out = Output()
 
         # Set unwanted draw controls to False or empty objects
+        # @TODO-CLEANUP: Create only one DrawControl and pass in the attributes instead
         draw_control = DrawControl(
             edit=False,
             remove=False,
             circlemarker={},
             polygon={},
             polyline={},
+            marker={},
         )
 
-        aoi_coords = main.aoi_widget.children[1]
-        aoi_clear_button = main.aoi_widget.children[2]
+        # Add rectangle draw control for bounding box
+        draw_control.rectangle = {
+            "shapeOptions": {
+                "fillColor": "transparent",
+                "color": "#333",
+                "fillOpacity": 1.0,
+            },
+            "repeatMode": False,
+        }
 
+        tabs = {}
+
+        for i in range(2):
+            tabs[f"child{i}"] = (
+                main.interact_widget.children[0]
+                .children[i]
+                .children[0]
+                .children[0]
+                .children
+            )
+
+        point_tab_children = tabs["child0"]
+        area_tab_children = tabs["child1"]
+
+        aoi_coords = area_tab_children[1]
+        aoi_clear_button = area_tab_children[2]
+
+        # @TODO-CLEANUP: Duplication between tabs, pull logic out into a common utilities file
         def handle_clear(self):
             draw_layer = main.find_layer("draw_layer")
             main.remove_layer(draw_layer)
@@ -28,6 +61,11 @@ class DrawControlWidget:
         def handle_draw(self, action, geo_json, **kwargs):
             main.aoi_coordinates = []
             main.aoi_bbox = ()
+
+            if "Coordinates" in point_tab_children[1].value:
+                area_tab_children[
+                    1
+                ].value = "<code>Waiting for points of interest...</code>"
 
             if action == "created":
                 if geo_json["geometry"]:
@@ -64,21 +102,7 @@ class DrawControlWidget:
 
             return
 
-        def value_changed(change):
-            print("CHANGE", change)
-
         draw_control.on_draw(callback=handle_draw)
-        draw_control.observe(value_changed, names=["value"])
-
-        # Add rectangle draw control for bounding box
-        draw_control.rectangle = {
-            "shapeOptions": {
-                "fillColor": "transparent",
-                "color": "#333",
-                "fillOpacity": 1.0,
-            },
-            "repeatMode": False,
-        }
         draw_control.output = bbox_out
 
         return draw_control

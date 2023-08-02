@@ -645,7 +645,7 @@ class StacDiscoveryWidget:
                         max_items=20,
                         # intersects=geometries[0],
                         datetime=_datetime,
-                        titiler_endpoint=self.titiler_endpoint,
+                        titiler_endpoint=TITILER_ENDPOINT,
                         get_info=True,
                     )
                     result_items = list(collection_items.values())
@@ -825,11 +825,12 @@ class StacDiscoveryWidget:
                                 if self.stac_data["layer_added"] == True:
                                     self.layers = self.layers[: len(self.layers) - 1]
                                     self.stac_data["layer_added"] = False
-                                self.add_tile_layer(
+                                applied_tile_layer = self.add_tile_layer(
                                     url=tile_url,
-                                    name=items_dropdown.value,
+                                    name=f'{collections_dropdown.value}, {items_dropdown.value}',
                                     attribution=items_dropdown.value,
                                 )
+                                self.applied_layers.append(applied_tile_layer)
                                 stac_opacity_slider.observe(
                                     handle_stac_layer_opacity, names="value"
                                 )

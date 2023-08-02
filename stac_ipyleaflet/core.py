@@ -14,10 +14,12 @@ from rio_tiler.models import ImageData
 from shapely.geometry import Polygon
 import xarray as xr
 
+from stac_ipyleaflet.stac_discovery.requests import make_get_request
 from stac_ipyleaflet.constants import TITILER_ENDPOINT, TITILER_STAC_ENDPOINT
 from stac_ipyleaflet.stac_discovery.stac_widget import StacDiscoveryWidget
 from stac_ipyleaflet.widgets.basemaps import BasemapsWidget
 from stac_ipyleaflet.widgets.draw import DrawControlWidget
+from stac_ipyleaflet.widgets.inspect import InspectControlWidget
 
 
 class StacIpyleaflet(Map):
@@ -25,15 +27,11 @@ class StacIpyleaflet(Map):
     Stac ipyleaflet is an extension to ipyleaflet `Map`.
     """
 
-    raw_input = input
-
-    draw_control: DrawControl
     histogram_layer: Popup
     warning_layer: Popup = None
     loading_widget_layer: Popup = None
     bbox_centroid: list = []
 
-    titiler_endpoint = TITILER_ENDPOINT
     titiler_stac_endpoint = TITILER_STAC_ENDPOINT
 
     def __init__(self, **kwargs):
@@ -59,8 +57,12 @@ class StacIpyleaflet(Map):
         self.selected_data = []
         self.histogram_layer = None
         self.draw_control_added = False
+        self.point_control_added = False
         self.aoi_coordinates = []
         self.aoi_bbox = ()
+        self.applied_layers = []
+        self.inspect_widget = None
+        self.marker_added = False
 
         gif_file = files("stac_ipyleaflet.data").joinpath("loading.gif")
         with open(gif_file, "rb") as f:
@@ -80,16 +82,17 @@ class StacIpyleaflet(Map):
         main_button_layout = Layout(
             width="120px", height="35px", border="1px solid #4682B4"
         )
-        draw_btn = ToggleButton(
-            description="Draw", icon="square-o", layout=main_button_layout
+        # @NOTE: Break these button creations out...
+        interact_btn = ToggleButton(
+            description="Interact", icon="pencil", layout=main_button_layout
         )
-        draw_btn.style.text_color = self.accent_color
-        draw_btn.style.button_color = "transparent"
-        draw_btn.tooltip = "Draw Area of Interest"
-        draw_btn.observe(
-            self.toggle_draw_widget_display, type="change", names=["value"]
+        interact_btn.style.text_color = self.accent_color
+        interact_btn.style.button_color = "transparent"
+        interact_btn.tooltip = "Interact with the map"
+        interact_btn.observe(
+            self.toggle_interact_widget_display, type="change", names=["value"]
         )
-        self.buttons["draw"] = draw_btn
+        self.buttons["interact"] = interact_btn
 
         layers_btn = ToggleButton(
             description="Layers", icon="map-o", layout=main_button_layout
@@ -126,12 +129,21 @@ class StacIpyleaflet(Map):
             height="50px",
         )
         buttons_box = HBox(
-            children=[draw_btn, layers_btn, stac_btn], layout=buttons_box_layout
+            children=[interact_btn, layers_btn, stac_btn],
+            layout=buttons_box_layout,
         )
         display(buttons_box)
 
-        self.add_biomass_layers()
+        self.add_biomass_layers_options()
         self.add_custom_tools()
+
+        self.point_control = InspectControlWidget.template(
+            self,
+            self.applied_layers,
+            self.interact_widget,
+            make_get_request,
+            TITILER_ENDPOINT,
+        )
         self.draw_control = DrawControlWidget.template(self)
 
         return None
@@ -142,12 +154,15 @@ class StacIpyleaflet(Map):
             if self.layers_widget.layout.display == "none":
                 self.layers_widget.layout.display = "block"
                 self.stac_widget.layout.display = "none"
-                self.aoi_widget.layout.display = "none"
+                self.interact_widget.layout.display = "none"
                 self.buttons["stac"].value = False
-                self.buttons["draw"].value = False
+                self.buttons["interact"].value = False
                 if self.draw_control_added:
                     self.remove(self.draw_control)
                     self.draw_control_added = False
+                if self.point_control_added:
+                    self.remove(self.point_control)
+                    self.point_control_added = False
         if not b["new"]:
             if self.layers_widget.layout.display == "block":
                 self.layers_widget.layout.display = "none"
@@ -157,44 +172,47 @@ class StacIpyleaflet(Map):
             if self.stac_widget.layout.display == "none":
                 self.stac_widget.layout.display = "block"
                 self.layers_widget.layout.display = "none"
-                self.aoi_widget.layout.display = "none"
+                self.interact_widget.layout.display = "none"
                 self.buttons["layers"].value = False
-                self.buttons["draw"].value = False
+                self.buttons["interact"].value = False
                 if self.draw_control_added:
                     self.remove(self.draw_control)
                     self.draw_control_added = False
+                if self.point_control_added:
+                    self.remove(self.point_control)
+                    self.point_control_added = False
         if not b["new"]:
             if self.stac_widget.layout.display == "block":
                 self.stac_widget.layout.display = "none"
 
-    def toggle_draw_widget_display(self, b):
+    def toggle_interact_widget_display(self, b):
         if b["new"]:
-            if self.aoi_widget.layout.display == "none":
-                self.aoi_widget.layout.display = "block"
-                self.add_control(self.draw_control)
-                self.draw_control_added = True
+            if self.interact_widget.layout.display == "none":
+                self.interact_widget.layout.display = "block"
                 self.stac_widget.layout.display = "none"
                 self.layers_widget.layout.display = "none"
                 self.buttons["stac"].value = False
                 self.buttons["layers"].value = False
+                selected_tab = self.interact_widget.children[0].titles[
+                    self.interact_widget.children[0].selected_index
+                ]
+                if selected_tab == "Point":
+                    self.add_control(self.point_control)
+                    self.point_control_added = True
+                elif selected_tab == "Area":
+                    self.add_control(self.draw_control)
+                    self.draw_control_added = True
         if not b["new"]:
-            if self.aoi_widget.layout.display == "block":
-                self.aoi_widget.layout.display = "none"
+            if self.interact_widget.layout.display == "block":
+                self.interact_widget.layout.display = "none"
                 if self.draw_control_added:
                     self.remove(self.draw_control)
                     self.draw_control_added = False
+                if self.point_control_added:
+                    self.remove(self.point_control)
+                    self.point_control_added = False
 
-    def create_aoi_widget(self):
-        aoi_widget = HBox(
-            layout=Layout(
-                width="300px", padding="0px 6px 2px 6px", margin="0px 2px 2px 2px"
-            )
-        )
-        aoi_widget.layout.flex_flow = "column"
-        aoi_widget.layout.min_width = "300px"
-        aoi_widget.layout.max_height = "360px"
-        aoi_widget.layout.overflow = "auto"
-
+    def create_aoi_tab(self):
         aoi_widget_desc = HTML(
             value="<h4><b>Polygon</b></h4>",
         )
@@ -209,12 +227,88 @@ class StacIpyleaflet(Map):
             disabled=True,
             # layout=Layout(margin="4px 0 8px 0")
         )
-
-        aoi_widget.children = [aoi_widget_desc, aoi_html, aoi_clear_button]
-        aoi_widget.layout.display = "none"
+        aoi_widget = HBox([aoi_widget_desc, aoi_html, aoi_clear_button])
+        aoi_widget.layout.flex_flow = "column"
 
         return aoi_widget
 
+    # @NOTE: Create dynamic widget function
+    def create_inspect_tab(self):
+        inspect_widget_desc = HTML(
+            value="<h4>Marker</h4>",
+        )
+        inspect_widget_html = HTML(
+            value="<code>Waiting for points of interest...</code>",
+            description="",
+        )
+
+        inspect_widget_button = Button(
+            description="Clear Markers",
+            tooltip="Clear Markers",
+            icon="trash",
+            disabled=True,
+        )
+
+        inspect_widget = HBox(
+            [
+                inspect_widget_desc,
+                inspect_widget_html,
+                inspect_widget_button,
+            ]
+        )
+
+        inspect_widget.layout.flex_flow = "column"
+
+        return inspect_widget
+
+    def create_interact_widget(self):
+        interact_widget = Box(style={"max-width: 420px"})
+        interact_widget.layout.flex_flow = "column"
+        interact_widget.layout.max_height = "360px"
+        interact_widget.layout.overflow = "auto"
+
+        tab_headers = ["Point", "Area"]
+        tab_children = []
+        tab_widget = Tab()
+
+        out = Output()
+        display(out)
+
+        def toggle_interact_tab_change(event):
+            selected_tab = self.interact_widget.children[0].titles[
+                event.owner.selected_index
+            ]
+            if selected_tab == "Point":  # Inspect Control
+                if self.draw_control_added:
+                    self.remove(self.draw_control)
+                    self.draw_control_added = False
+                self.add_control(self.point_control)
+                self.point_control_added = True
+            elif selected_tab == "Area":  # Draw Control
+                if self.point_control_added:
+                    self.remove(self.point_control)
+                    self.point_control_added = False
+                self.add_control(self.draw_control)
+                self.draw_control_added = True
+
+        for tab in tab_headers:
+            tab_content = VBox()
+            if tab == "Point":
+                hbox = self.create_inspect_tab()
+                tab_content.children = [VBox([hbox])]
+                tab_children.append(tab_content)
+            elif tab == "Area":
+                hbox = self.create_aoi_tab()
+                tab_content.children = [VBox([hbox])]
+                tab_children.append(tab_content)
+        tab_widget.children = tab_children
+        tab_widget.titles = tab_headers
+        interact_widget.children = [tab_widget]
+        interact_widget.layout.display = "none"
+        tab_widget.observe(toggle_interact_tab_change, names="selected_index")
+        return interact_widget
+
+    # @NOTE: Possibly move into its own child class file
     def create_layers_widget(self):
         layers_widget = Box(style={"max-width: 420px"})
         layers_widget.layout.flex_flow = "column"
@@ -230,6 +324,15 @@ class StacIpyleaflet(Map):
 
         opacity_values = [i * 10 for i in range(10 + 1)]  # [0.001, 0.002, ...]
 
+        def layer_checkbox_changed(change):
+            layer = next(
+                (x for x in self.layers if x.name == change.owner.description), None
+            )
+            if change.owner.value:
+                self.applied_layers.append(layer)
+            if not change.owner.value:
+                self.applied_layers.remove(layer)
+
         def handle_basemap_opacity_change(change):
             selected_bm = self.basemap_selection_dd.value
             for l in self.layers:
@@ -239,6 +342,8 @@ class StacIpyleaflet(Map):
 
         def handle_layer_opacity_change(change):
             selected_layer = change.owner.description
+            if selected_layer not in self.applied_layers:
+                return
             for l in self.layers:
                 if l.name == selected_layer:
                     l.opacity = change["new"]
@@ -260,11 +365,14 @@ class StacIpyleaflet(Map):
                             value=layer.visible, description=layer.name, indent=False
                         )
                         jslink((layer_checkbox, "value"), (layer, "visible"))
+                        layer_checkbox.observe(
+                            layer_checkbox_changed, names="value", type="change"
+                        )
                         hbox = HBox([layer_checkbox])
                         layer_opacity_slider = SelectionSlider(
                             value=1,
                             options=[("%g" % i, i / 100) for i in opacity_values],
-                            description=f"{layer.name}",
+                            description=layer.name,
                             continuous_update=False,
                             orientation="horizontal",
                             layout=Layout(margin="-12px 0 4px 0"),
@@ -336,11 +444,11 @@ class StacIpyleaflet(Map):
         # Create custom map widgets
         self.layers_widget = self.create_layers_widget()
         self.stac_widget = StacDiscoveryWidget.template(self)
-        self.aoi_widget = self.create_aoi_widget()
+        self.interact_widget = self.create_interact_widget()
 
         layers_widget = VBox([self.layers_widget])
         stac_widget = VBox([self.stac_widget])
-        aoi_widget = VBox([self.aoi_widget])
+        interact_widget = VBox([self.interact_widget])
 
         layers_control = WidgetControl(
             widget=layers_widget, position="topright", id="layers_widget"
@@ -348,15 +456,15 @@ class StacIpyleaflet(Map):
         stack_control = WidgetControl(
             widget=stac_widget, position="topright", id="stac_widget"
         )
-        aoi_control = WidgetControl(
-            widget=aoi_widget, position="topright", id="aoi_widget"
+        interact_control = WidgetControl(
+            widget=interact_widget, position="topright", id="interact_widget"
         )
 
         self.add(layers_control)
         self.add(stack_control)
-        self.add(aoi_control)
+        self.add(interact_control)
 
-    def add_biomass_layers(self):
+    def add_biomass_layers_options(self):
         biomass_file = files("stac_ipyleaflet.data").joinpath("biomass-layers.csv")
         with open(biomass_file, newline="") as f:
             csv_reader = csv.reader(f)
@@ -413,6 +521,7 @@ class StacIpyleaflet(Map):
                 **kwargs,
             )
             self.add_layer(tile_layer)
+            return tile_layer
 
         except Exception as e:
             logging.error("Failed to add the specified TileLayer.")
