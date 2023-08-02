@@ -44,13 +44,6 @@ class DrawControlWidget:
         point_tab_children = tabs['child0']
         area_tab_children = tabs['child1']
 
-        # area_tab = (
-        #     main.interact_widget.children[0]
-        #     .children[1]
-        #     .children[0]
-        #     .children[0]
-        #     .children
-        # )
         aoi_coords = area_tab_children[1]
         aoi_clear_button = area_tab_children[2]
 
