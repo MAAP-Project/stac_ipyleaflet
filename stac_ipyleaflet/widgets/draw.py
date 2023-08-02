@@ -12,6 +12,7 @@ class DrawControlWidget:
         bbox_out = Output()
 
         # Set unwanted draw controls to False or empty objects
+        # @TODO-CLEANUP: Create only one DrawControl and pass in the attributes instead
         draw_control = DrawControl(
             edit=False,
             remove=False,

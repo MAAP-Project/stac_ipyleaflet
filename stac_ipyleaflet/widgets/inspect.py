@@ -21,6 +21,8 @@ class InspectControlWidget:
         self, applied_layers, interact_widget, make_get_request, titiler_endpoint
     ):
         main = self
+        
+        # @TODO-CLEANUP: Create only one DrawControl and pass in the attributes instead
         draw_control = DrawControl(
             edit=False,
             remove=False,
