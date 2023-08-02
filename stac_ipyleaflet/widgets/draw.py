@@ -4,8 +4,10 @@ from ipywidgets import Box, Output
 # @NOTE: This should be an extension of the IPYLEAFLET Class. Currently it is just being passed
 # in instead due to import errors
 
-
 # @TODO: Fix linting errors caused by inferred inheritance and just pass in params instead
+
+
+# @TODO: Break out shared logic between widgets into a utilities directory
 class DrawControlWidget:
     def template(self, **kwargs) -> Box(style={"max_height: 200px"}):
         main = self
@@ -35,15 +37,16 @@ class DrawControlWidget:
         tabs = {}
 
         for i in range(2):
-            tabs[f'child{i}'] = (main.interact_widget.children[0]
-            .children[i]
-            .children[0]
-            .children[0]
-            .children
-        )
-            
-        point_tab_children = tabs['child0']
-        area_tab_children = tabs['child1']
+            tabs[f"child{i}"] = (
+                main.interact_widget.children[0]
+                .children[i]
+                .children[0]
+                .children[0]
+                .children
+            )
+
+        point_tab_children = tabs["child0"]
+        area_tab_children = tabs["child1"]
 
         aoi_coords = area_tab_children[1]
         aoi_clear_button = area_tab_children[2]
@@ -59,8 +62,10 @@ class DrawControlWidget:
             main.aoi_coordinates = []
             main.aoi_bbox = ()
 
-            if('Coordinates' in point_tab_children[1].value):
-                area_tab_children[1].value = "<code>Waiting for points of interest...</code>"
+            if "Coordinates" in point_tab_children[1].value:
+                area_tab_children[
+                    1
+                ].value = "<code>Waiting for points of interest...</code>"
 
             if action == "created":
                 if geo_json["geometry"]:

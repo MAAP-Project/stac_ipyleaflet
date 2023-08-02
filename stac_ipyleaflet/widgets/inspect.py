@@ -16,12 +16,15 @@ class LayerData:
 
 # @NOTE: This should be an extension of the IPYLEAFLET Class. Currently it is just being passed
 # in instead due to import errors
+
+
+# @TODO: Break out shared logic between widgets into a utilities directory
 class InspectControlWidget:
     def template(
         self, applied_layers, interact_widget, make_get_request, titiler_endpoint
     ):
         main = self
-        
+
         # @TODO-CLEANUP: Create only one DrawControl and pass in the attributes instead
         draw_control = DrawControl(
             edit=False,
@@ -39,15 +42,16 @@ class InspectControlWidget:
         tabs = {}
 
         for i in range(2):
-            tabs[f'child{i}'] = (main.interact_widget.children[0]
-            .children[i]
-            .children[0]
-            .children[0]
-            .children
-        )
-            
-        point_tab_children = tabs['child0']
-        area_tab_children = tabs['child1']
+            tabs[f"child{i}"] = (
+                main.interact_widget.children[0]
+                .children[i]
+                .children[0]
+                .children[0]
+                .children
+            )
+
+        point_tab_children = tabs["child0"]
+        area_tab_children = tabs["child1"]
 
         point_data = point_tab_children[1]
         clear_button = point_tab_children[2]
@@ -114,8 +118,10 @@ class InspectControlWidget:
                 return
 
             self.coordinates = []
-            if('Coordinates' in area_tab_children[1].value):
-                area_tab_children[1].value = "<code>Waiting for area of interest...</code>"
+            if "Coordinates" in area_tab_children[1].value:
+                area_tab_children[
+                    1
+                ].value = "<code>Waiting for area of interest...</code>"
 
             if action == "created":
                 if geo_json["geometry"] and geo_json["geometry"]["type"] == "Point":
