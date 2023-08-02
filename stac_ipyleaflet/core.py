@@ -57,7 +57,7 @@ class StacIpyleaflet(Map):
         self.selected_data = []
         self.histogram_layer = None
         self.draw_control_added = False
-        self.inspect_control_added = False
+        self.point_control_added = False
         self.aoi_coordinates = []
         self.aoi_bbox = ()
         self.applied_layers = []
@@ -137,7 +137,7 @@ class StacIpyleaflet(Map):
         self.add_biomass_layers_options()
         self.add_custom_tools()
 
-        self.inspect_control = InspectControlWidget.template(
+        self.point_control = InspectControlWidget.template(
             self,
             self.applied_layers,
             self.interact_widget,
@@ -160,9 +160,9 @@ class StacIpyleaflet(Map):
                 if self.draw_control_added:
                     self.remove(self.draw_control)
                     self.draw_control_added = False
-                if self.inspect_control_added:
-                    self.remove(self.inspect_control)
-                    self.inspect_control_added = False
+                if self.point_control_added:
+                    self.remove(self.point_control)
+                    self.point_control_added = False
         if not b["new"]:
             if self.layers_widget.layout.display == "block":
                 self.layers_widget.layout.display = "none"
@@ -178,9 +178,9 @@ class StacIpyleaflet(Map):
                 if self.draw_control_added:
                     self.remove(self.draw_control)
                     self.draw_control_added = False
-                if self.inspect_control_added:
-                    self.remove(self.inspect_control)
-                    self.inspect_control_added = False
+                if self.point_control_added:
+                    self.remove(self.point_control)
+                    self.point_control_added = False
         if not b["new"]:
             if self.stac_widget.layout.display == "block":
                 self.stac_widget.layout.display = "none"
@@ -197,8 +197,8 @@ class StacIpyleaflet(Map):
                     self.interact_widget.children[0].selected_index
                 ]
                 if selected_tab == "Point":
-                    self.add_control(self.inspect_control)
-                    self.inspect_control_added = True
+                    self.add_control(self.point_control)
+                    self.point_control_added = True
                 elif selected_tab == "Area":
                     self.add_control(self.draw_control)
                     self.draw_control_added = True
@@ -208,9 +208,9 @@ class StacIpyleaflet(Map):
                 if self.draw_control_added:
                     self.remove(self.draw_control)
                     self.draw_control_added = False
-                if self.inspect_control_added:
-                    self.remove(self.inspect_control)
-                    self.inspect_control_added = False
+                if self.point_control_added:
+                    self.remove(self.point_control)
+                    self.point_control_added = False
 
     def create_aoi_tab(self):
         aoi_widget_desc = HTML(
@@ -282,12 +282,12 @@ class StacIpyleaflet(Map):
                 if self.draw_control_added:
                     self.remove(self.draw_control)
                     self.draw_control_added = False
-                self.add_control(self.inspect_control)
-                self.inspect_control_added = True
+                self.add_control(self.point_control)
+                self.point_control_added = True
             elif selected_tab == "Area":  # Draw Control
-                if self.inspect_control_added:
-                    self.remove(self.inspect_control)
-                    self.inspect_control_added = False
+                if self.point_control_added:
+                    self.remove(self.point_control)
+                    self.point_control_added = False
                 self.add_control(self.draw_control)
                 self.draw_control_added = True
 

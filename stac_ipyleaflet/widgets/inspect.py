@@ -69,10 +69,10 @@ class InspectControlWidget:
                 # @NOTE: Blocked until Impact Titiler is updated to access /mosaicsjson/point
             return visible_layers_data
 
-        def display_data(layers_data: LayerData):
+        def display_layer_data(layers_data: LayerData):
             point_data.value = ""
 
-            def create_html_template(layer_name, coordinates, values, band_names):
+            def create_layer_data_html(layer_name, coordinates, values, band_names):
                 template = f"""
                     <p>
                         <b>
@@ -94,7 +94,7 @@ class InspectControlWidget:
                 return template
 
             for layer in layers_data:
-                point_data.value += create_html_template(
+                point_data.value += create_layer_data_html(
                     layer["layer_name"],
                     layer["data"]["coordinates"],
                     layer["data"]["values"],
@@ -127,7 +127,7 @@ class InspectControlWidget:
                     if len(applied_layers):
                         layers_data = get_visible_layers_data(self.coordinates)
                         if layers_data:
-                            display_data(layers_data)
+                            display_layer_data(layers_data)
                         else:
                             point_data.value = f"<p><b>Coordinates:</b></p><code>{self.coordinates}</code><br/>"
                     elif not len(applied_layers):
