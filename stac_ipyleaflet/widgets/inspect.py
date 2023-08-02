@@ -34,11 +34,21 @@ class InspectControlWidget:
             "repeatMode": False,
         }
 
-        interact_tab = (
-            interact_widget.children[0].children[0].children[0].children[0].children
+        tabs = {}
+
+        for i in range(2):
+            tabs[f'child{i}'] = (main.interact_widget.children[0]
+            .children[i]
+            .children[0]
+            .children[0]
+            .children
         )
-        point_data = interact_tab[1]
-        clear_button = interact_tab[2]
+            
+        point_tab_children = tabs['child0']
+        area_tab_children = tabs['child1']
+
+        point_data = point_tab_children[1]
+        clear_button = point_tab_children[2]
 
         def get_visible_layers_data(coordinates) -> List[LayerData]:
             visible_layers_data = []
@@ -93,6 +103,7 @@ class InspectControlWidget:
             return
 
         def handle_interaction(self, action, geo_json, **kwargs):
+            # @TODO-CLEANUP: Duplication between tabs, pull logic out into a common utilities file
             def handle_clear(event):
                 draw_layer = main.find_layer("draw_layer")
                 main.remove_layer(draw_layer)
@@ -101,6 +112,8 @@ class InspectControlWidget:
                 return
 
             self.coordinates = []
+            if('Coordinates' in area_tab_children[1].value):
+                area_tab_children[1].value = "<code>Waiting for area of interest...</code>"
 
             if action == "created":
                 if geo_json["geometry"] and geo_json["geometry"]["type"] == "Point":
@@ -119,6 +132,7 @@ class InspectControlWidget:
                             point_data.value = f"<p><b>Coordinates:</b></p><code>{self.coordinates}</code><br/>"
                     elif not len(applied_layers):
                         point_data.value = f"<p><b>Coordinates:</b></p><code>{self.coordinates}</code><br/>"
+
             self.clear()
             clear_button.disabled = False
             clear_button.on_click(handle_clear)

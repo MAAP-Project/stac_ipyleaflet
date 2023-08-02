@@ -31,16 +31,30 @@ class DrawControlWidget:
             "repeatMode": False,
         }
 
-        area_tab = (
-            main.interact_widget.children[0]
-            .children[1]
+        tabs = {}
+
+        for i in range(2):
+            tabs[f'child{i}'] = (main.interact_widget.children[0]
+            .children[i]
             .children[0]
             .children[0]
             .children
         )
-        aoi_coords = area_tab[1]
-        aoi_clear_button = area_tab[2]
+            
+        point_tab_children = tabs['child0']
+        area_tab_children = tabs['child1']
 
+        # area_tab = (
+        #     main.interact_widget.children[0]
+        #     .children[1]
+        #     .children[0]
+        #     .children[0]
+        #     .children
+        # )
+        aoi_coords = area_tab_children[1]
+        aoi_clear_button = area_tab_children[2]
+
+        # @TODO-CLEANUP: Duplication between tabs, pull logic out into a common utilities file
         def handle_clear(self):
             draw_layer = main.find_layer("draw_layer")
             main.remove_layer(draw_layer)
@@ -50,6 +64,9 @@ class DrawControlWidget:
         def handle_draw(self, action, geo_json, **kwargs):
             main.aoi_coordinates = []
             main.aoi_bbox = ()
+
+            if('Coordinates' in point_tab_children[1].value):
+                area_tab_children[1].value = "<code>Waiting for points of interest...</code>"
 
             if action == "created":
                 if geo_json["geometry"]:
