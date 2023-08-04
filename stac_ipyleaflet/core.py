@@ -20,7 +20,7 @@ from stac_ipyleaflet.stac_discovery.stac_widget import StacDiscoveryWidget
 from stac_ipyleaflet.widgets.basemaps import BasemapsWidget
 from stac_ipyleaflet.widgets.draw import DrawControlWidget
 from stac_ipyleaflet.widgets.inspect import InspectControlWidget
-
+# from stac_ipyleaflet.utilities.helpers import Helpers
 
 class StacIpyleaflet(Map):
     """
@@ -35,6 +35,7 @@ class StacIpyleaflet(Map):
     titiler_stac_endpoint = TITILER_STAC_ENDPOINT
 
     def __init__(self, **kwargs):
+        from stac_ipyleaflet.utilities.helpers import Helpers
         if "center" not in kwargs:
             kwargs["center"] = [20, 0]
 
@@ -64,6 +65,23 @@ class StacIpyleaflet(Map):
         self.inspect_widget = None
         self.marker_added = False
 
+        self.create_loading_widget() # @QUESTION: Is this even used though? Can we just get rid of it?
+        self.create_buttons_layout()
+        self.add_biomass_layers_options()
+        self.add_custom_tools()
+
+        self.point_control = InspectControlWidget.template(
+            self,
+            self.applied_layers,
+            self.interact_widget,
+            make_get_request,
+            TITILER_ENDPOINT,
+        )
+        self.draw_control = DrawControlWidget.template(self)
+        Helpers.test_this(self)
+        return None
+    
+    def create_loading_widget(self):
         gif_file = files("stac_ipyleaflet.data").joinpath("loading.gif")
         with open(gif_file, "rb") as f:
             gif_widget = Image(
@@ -78,47 +96,12 @@ class StacIpyleaflet(Map):
         self.loading_widget_layer = Popup(
             child=loading_widget, min_width=200, min_height=200
         )
+        return
 
-        main_button_layout = Layout(
-            width="120px", height="35px", border="1px solid #4682B4"
-        )
-        # @NOTE: Break these button creations out...
-        interact_btn = ToggleButton(
-            description="Interact", icon="pencil", layout=main_button_layout
-        )
-        interact_btn.style.text_color = self.accent_color
-        interact_btn.style.button_color = "transparent"
-        interact_btn.tooltip = "Interact with the map"
-        interact_btn.observe(
-            self.toggle_interact_widget_display, type="change", names=["value"]
-        )
-        self.buttons["interact"] = interact_btn
-
-        layers_btn = ToggleButton(
-            description="Layers", icon="map-o", layout=main_button_layout
-        )
-        layers_btn.style.text_color = self.accent_color
-        layers_btn.style.button_color = "transparent"
-        layers_btn.tooltip = "Open/Close Layers Menu"
-        layers_btn.observe(
-            self.toggle_layers_widget_display, type="change", names=["value"]
-        )
-        self.buttons["layers"] = layers_btn
-        """ histogram_btn = Button(description="Histogram", icon="bar-chart")
-        histogram_btn.style.text_color = "white"
-        histogram_btn.style.button_color = self.accent_color
-        histogram_btn.on_click(self.create_histograms) """
-
-        stac_btn = ToggleButton(
-            description="STAC Data", icon="search", layout=main_button_layout
-        )
-        stac_btn.style.text_color = self.accent_color
-        stac_btn.style.button_color = "white"
-        stac_btn.tooltip = "Open/Close STAC Data Search"
-        stac_btn.observe(
-            self.toggle_stac_widget_display, type="change", names=["value"]
-        )
-        self.buttons["stac"] = stac_btn
+    def create_buttons_layout(self):
+        interact_btn = self.create_widget_button('interact', "Interact with the map", "Interact", "pencil", self.toggle_interact_widget_display)
+        layers_btn = self.create_widget_button("layers", "Open/Close Layers Menu", "Layers", "map-o", self.toggle_layers_widget_display)
+        stac_btn = self.create_widget_button("stac", "Open/Close STAC Data Search", "STAC Data", "search", self.toggle_stac_widget_display)
 
         buttons_box_layout = Layout(
             display="flex",
@@ -133,20 +116,50 @@ class StacIpyleaflet(Map):
             layout=buttons_box_layout,
         )
         display(buttons_box)
+        return
 
-        self.add_biomass_layers_options()
-        self.add_custom_tools()
-
-        self.point_control = InspectControlWidget.template(
-            self,
-            self.applied_layers,
-            self.interact_widget,
-            make_get_request,
-            TITILER_ENDPOINT,
+    def create_widget_button(self, buttonId, toolTipMsg, description, icon, onClick):
+        main_button_layout = Layout(
+            width="120px", height="35px", border="1px solid #4682B4"
         )
-        self.draw_control = DrawControlWidget.template(self)
+        btn = ToggleButton(
+            description=description, icon=icon, layout=main_button_layout
+        )
+        btn.style.text_color = self.accent_color
+        btn.style.button_color = "transparent"
+        btn.tooltip = toolTipMsg
+        btn.observe(
+            onClick, type="change", names=["value"]
+        )
+        self.buttons[buttonId] = btn
+        return btn
 
-        return None
+    def create_widget_tab(self, desc, emptyValueState, btnDesc):
+        desc = HTML(
+            value=f"<h4>{desc}</h4>",
+        )
+        data_value = HTML(
+            value=f"<code>{emptyValueState}</code>",
+            description="",
+        )
+
+        button = Button(
+            description=btnDesc,
+            tooltip=btnDesc,
+            icon="trash",
+            disabled=True,
+        )
+
+        item = HBox(
+            [
+                desc,
+                data_value,
+                button,
+            ]
+        )
+
+        item.layout.flex_flow = "column"
+        return item
 
     # logic to handle main menu toggle buttons
     def toggle_layers_widget_display(self, b):
@@ -212,55 +225,6 @@ class StacIpyleaflet(Map):
                     self.remove(self.point_control)
                     self.point_control_added = False
 
-    def create_aoi_tab(self):
-        aoi_widget_desc = HTML(
-            value="<h4><b>Polygon</b></h4>",
-        )
-        aoi_html = HTML(
-            value="<code>Waiting for area of interest...</code>",
-            description="",
-        )
-        aoi_clear_button = Button(
-            description="Clear AOI Polygon",
-            tooltip="Clear AOI Polygon",
-            icon="trash",
-            disabled=True,
-            # layout=Layout(margin="4px 0 8px 0")
-        )
-        aoi_widget = HBox([aoi_widget_desc, aoi_html, aoi_clear_button])
-        aoi_widget.layout.flex_flow = "column"
-
-        return aoi_widget
-
-    # @NOTE: Create dynamic widget function
-    def create_inspect_tab(self):
-        inspect_widget_desc = HTML(
-            value="<h4>Marker</h4>",
-        )
-        inspect_widget_html = HTML(
-            value="<code>Waiting for points of interest...</code>",
-            description="",
-        )
-
-        inspect_widget_button = Button(
-            description="Clear Markers",
-            tooltip="Clear Markers",
-            icon="trash",
-            disabled=True,
-        )
-
-        inspect_widget = HBox(
-            [
-                inspect_widget_desc,
-                inspect_widget_html,
-                inspect_widget_button,
-            ]
-        )
-
-        inspect_widget.layout.flex_flow = "column"
-
-        return inspect_widget
-
     def create_interact_widget(self):
         interact_widget = Box(style={"max-width: 420px"})
         interact_widget.layout.flex_flow = "column"
@@ -294,11 +258,11 @@ class StacIpyleaflet(Map):
         for tab in tab_headers:
             tab_content = VBox()
             if tab == "Point":
-                hbox = self.create_inspect_tab()
+                hbox = self.create_widget_tab("Marker", "Waiting for points of interest...", "Clear Markers")
                 tab_content.children = [VBox([hbox])]
                 tab_children.append(tab_content)
             elif tab == "Area":
-                hbox = self.create_aoi_tab()
+                hbox = self.create_widget_tab("Polygon", "Waiting for area of interest...", "Clear AOI Polygon")
                 tab_content.children = [VBox([hbox])]
                 tab_children.append(tab_content)
         tab_widget.children = tab_children
