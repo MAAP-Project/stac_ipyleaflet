@@ -18,7 +18,6 @@ from stac_ipyleaflet.constants import TITILER_STAC_ENDPOINT
 from stac_ipyleaflet.stac_discovery.stac_widget import StacDiscoveryWidget
 from stac_ipyleaflet.widgets.basemaps import BasemapsWidget
 
-
 class StacIpyleaflet(Map):
     histogram_layer: Popup
     warning_layer: Popup = None
@@ -124,7 +123,7 @@ class StacIpyleaflet(Map):
             layout=buttons_box_layout,
         )
         display(buttons_box)
-        return
+        return buttons_box
 
     def create_widget_button(self, buttonId, toolTipMsg, description, icon, onClick):
         main_button_layout = Layout(
