@@ -1,7 +1,7 @@
 """Main module."""
 import csv
 from importlib.resources import files
-from ipyleaflet import Map, DrawControl, Popup, TileLayer, WidgetControl
+from ipyleaflet import Map, Popup, TileLayer, WidgetControl
 from IPython.display import display
 from ipywidgets import Box, HBox, VBox, Layout, SelectionSlider, HTML, IntSlider, Image
 from ipywidgets import Checkbox, Dropdown, Tab, ToggleButton, Button
@@ -14,13 +14,9 @@ from rio_tiler.models import ImageData
 from shapely.geometry import Polygon
 import xarray as xr
 
-from stac_ipyleaflet.stac_discovery.requests import make_get_request
-from stac_ipyleaflet.constants import TITILER_ENDPOINT, TITILER_STAC_ENDPOINT
+from stac_ipyleaflet.constants import TITILER_STAC_ENDPOINT
 from stac_ipyleaflet.stac_discovery.stac_widget import StacDiscoveryWidget
 from stac_ipyleaflet.widgets.basemaps import BasemapsWidget
-
-# from stac_ipyleaflet.widgets.draw import DrawControlWidget
-# from stac_ipyleaflet.widgets.inspect import InspectControlWidget
 
 
 class StacIpyleaflet(Map):
