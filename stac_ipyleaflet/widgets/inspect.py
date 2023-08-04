@@ -1,6 +1,9 @@
 from ipyleaflet import DrawControl, MarkerCluster, Marker, DrawControl, GeoJSON
 from urllib.parse import urlparse, parse_qs
 from typing import List
+from stac_ipyleaflet.constants import TITILER_ENDPOINT
+from stac_ipyleaflet.core import StacIpyleaflet
+from stac_ipyleaflet.stac_discovery.requests import make_get_request
 
 
 class COGRequestedData:
@@ -14,17 +17,9 @@ class LayerData:
     data: COGRequestedData
 
 
-# @NOTE: This should be an extension of the IPYLEAFLET Class. Currently it is just being passed
-# in instead due to import errors
-
-
 # @TODO: Break out shared logic between widgets into a utilities directory
-class InspectControlWidget:
-    def template(
-        self, applied_layers, interact_widget, make_get_request, titiler_endpoint
-    ):
-        main = self
-
+class InspectControlWidget(StacIpyleaflet):
+    def template(self):
         # @TODO-CLEANUP: Create only one DrawControl and pass in the attributes instead
         draw_control = DrawControl(
             edit=False,
@@ -43,7 +38,7 @@ class InspectControlWidget:
 
         for i in range(2):
             tabs[f"child{i}"] = (
-                main.interact_widget.children[0]
+                self.interact_widget.children[0]
                 .children[i]
                 .children[0]
                 .children[0]
@@ -59,9 +54,9 @@ class InspectControlWidget:
         def get_visible_layers_data(coordinates) -> List[LayerData]:
             visible_layers_data = []
             cog_partial_request_path = (
-                f"{titiler_endpoint}/cog/point/{coordinates[0]},{coordinates[1]}?url="
+                f"{TITILER_ENDPOINT}/cog/point/{coordinates[0]},{coordinates[1]}?url="
             )
-            for layer in applied_layers:
+            for layer in self.applied_layers:
                 if "/cog" in layer.url:
                     parsed_url = urlparse(layer.url)
                     parsed_query = parse_qs(parsed_url.query)
@@ -108,16 +103,16 @@ class InspectControlWidget:
                 )
             return
 
-        def handle_interaction(self, action, geo_json, **kwargs):
+        def handle_interaction(event, action, geo_json, **kwargs):
             # @TODO-CLEANUP: Duplication between tabs, pull logic out into a common utilities file
             def handle_clear(event):
-                draw_layer = main.find_layer("draw_layer")
-                main.remove_layer(draw_layer)
+                draw_layer = self.find_layer("draw_layer")
+                self.remove_layer(draw_layer)
                 point_data.value = "<code>Waiting for points of interest...</code>"
                 clear_button.disabled = True
                 return
 
-            self.coordinates = []
+            event.coordinates = []
             if "Coordinates" in area_tab_children[1].value:
                 area_tab_children[
                     1
@@ -129,19 +124,19 @@ class InspectControlWidget:
                         name="draw_layer",
                         data=geo_json,
                     )
-                    main.add_layer(geojson_layer)
-                    self.coordinates = geo_json["geometry"]["coordinates"]
+                    self.add_layer(geojson_layer)
+                    event.coordinates = geo_json["geometry"]["coordinates"]
 
-                    if len(applied_layers):
-                        layers_data = get_visible_layers_data(self.coordinates)
+                    if len(self.applied_layers):
+                        layers_data = get_visible_layers_data(event.coordinates)
                         if layers_data:
                             display_layer_data(layers_data)
                         else:
-                            point_data.value = f"<p><b>Coordinates:</b></p><code>{self.coordinates}</code><br/>"
-                    elif not len(applied_layers):
-                        point_data.value = f"<p><b>Coordinates:</b></p><code>{self.coordinates}</code><br/>"
+                            point_data.value = f"<p><b>Coordinates:</b></p><code>{event.coordinates}</code><br/>"
+                    elif not len(self.applied_layers):
+                        point_data.value = f"<p><b>Coordinates:</b></p><code>{event.coordinates}</code><br/>"
 
-            self.clear()
+            event.clear()
             clear_button.disabled = False
             clear_button.on_click(handle_clear)
             return

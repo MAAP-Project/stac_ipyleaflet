@@ -18,15 +18,12 @@ from stac_ipyleaflet.stac_discovery.requests import make_get_request
 from stac_ipyleaflet.constants import TITILER_ENDPOINT, TITILER_STAC_ENDPOINT
 from stac_ipyleaflet.stac_discovery.stac_widget import StacDiscoveryWidget
 from stac_ipyleaflet.widgets.basemaps import BasemapsWidget
-from stac_ipyleaflet.widgets.draw import DrawControlWidget
-from stac_ipyleaflet.widgets.inspect import InspectControlWidget
-# from stac_ipyleaflet.utilities.helpers import Helpers
+
+# from stac_ipyleaflet.widgets.draw import DrawControlWidget
+# from stac_ipyleaflet.widgets.inspect import InspectControlWidget
+
 
 class StacIpyleaflet(Map):
-    """
-    Stac ipyleaflet is an extension to ipyleaflet `Map`.
-    """
-
     histogram_layer: Popup
     warning_layer: Popup = None
     loading_widget_layer: Popup = None
@@ -36,6 +33,9 @@ class StacIpyleaflet(Map):
 
     def __init__(self, **kwargs):
         from stac_ipyleaflet.utilities.helpers import Helpers
+        from stac_ipyleaflet.widgets.inspect import InspectControlWidget
+        from stac_ipyleaflet.widgets.draw import DrawControlWidget
+
         if "center" not in kwargs:
             kwargs["center"] = [20, 0]
 
@@ -65,23 +65,17 @@ class StacIpyleaflet(Map):
         self.inspect_widget = None
         self.marker_added = False
 
-        self.create_loading_widget() # @QUESTION: Is this even used though? Can we just get rid of it?
+        self.create_load_gif()  # @QUESTION: Is this even used though? Can we just get rid of it?
         self.create_buttons_layout()
         self.add_biomass_layers_options()
         self.add_custom_tools()
 
-        self.point_control = InspectControlWidget.template(
-            self,
-            self.applied_layers,
-            self.interact_widget,
-            make_get_request,
-            TITILER_ENDPOINT,
-        )
+        self.point_control = InspectControlWidget.template(self)
         self.draw_control = DrawControlWidget.template(self)
         Helpers.test_this(self)
         return None
-    
-    def create_loading_widget(self):
+
+    def create_load_gif(self):
         gif_file = files("stac_ipyleaflet.data").joinpath("loading.gif")
         with open(gif_file, "rb") as f:
             gif_widget = Image(
@@ -99,9 +93,27 @@ class StacIpyleaflet(Map):
         return
 
     def create_buttons_layout(self):
-        interact_btn = self.create_widget_button('interact', "Interact with the map", "Interact", "pencil", self.toggle_interact_widget_display)
-        layers_btn = self.create_widget_button("layers", "Open/Close Layers Menu", "Layers", "map-o", self.toggle_layers_widget_display)
-        stac_btn = self.create_widget_button("stac", "Open/Close STAC Data Search", "STAC Data", "search", self.toggle_stac_widget_display)
+        interact_btn = self.create_widget_button(
+            "interact",
+            "Interact with the map",
+            "Interact",
+            "pencil",
+            self.toggle_interact_widget_display,
+        )
+        layers_btn = self.create_widget_button(
+            "layers",
+            "Open/Close Layers Menu",
+            "Layers",
+            "map-o",
+            self.toggle_layers_widget_display,
+        )
+        stac_btn = self.create_widget_button(
+            "stac",
+            "Open/Close STAC Data Search",
+            "STAC Data",
+            "search",
+            self.toggle_stac_widget_display,
+        )
 
         buttons_box_layout = Layout(
             display="flex",
@@ -128,9 +140,7 @@ class StacIpyleaflet(Map):
         btn.style.text_color = self.accent_color
         btn.style.button_color = "transparent"
         btn.tooltip = toolTipMsg
-        btn.observe(
-            onClick, type="change", names=["value"]
-        )
+        btn.observe(onClick, type="change", names=["value"])
         self.buttons[buttonId] = btn
         return btn
 
@@ -161,6 +171,15 @@ class StacIpyleaflet(Map):
         item.layout.flex_flow = "column"
         return item
 
+    def remove_draw_controls(self):
+        if self.draw_control_added:
+            self.remove(self.draw_control)
+            self.draw_control_added = False
+        if self.point_control_added:
+            self.remove(self.point_control)
+            self.point_control_added = False
+        return
+
     # logic to handle main menu toggle buttons
     def toggle_layers_widget_display(self, b):
         if b["new"]:
@@ -170,12 +189,7 @@ class StacIpyleaflet(Map):
                 self.interact_widget.layout.display = "none"
                 self.buttons["stac"].value = False
                 self.buttons["interact"].value = False
-                if self.draw_control_added:
-                    self.remove(self.draw_control)
-                    self.draw_control_added = False
-                if self.point_control_added:
-                    self.remove(self.point_control)
-                    self.point_control_added = False
+                self.remove_draw_controls()
         if not b["new"]:
             if self.layers_widget.layout.display == "block":
                 self.layers_widget.layout.display = "none"
@@ -188,12 +202,7 @@ class StacIpyleaflet(Map):
                 self.interact_widget.layout.display = "none"
                 self.buttons["layers"].value = False
                 self.buttons["interact"].value = False
-                if self.draw_control_added:
-                    self.remove(self.draw_control)
-                    self.draw_control_added = False
-                if self.point_control_added:
-                    self.remove(self.point_control)
-                    self.point_control_added = False
+                self.remove_draw_controls
         if not b["new"]:
             if self.stac_widget.layout.display == "block":
                 self.stac_widget.layout.display = "none"
@@ -218,18 +227,18 @@ class StacIpyleaflet(Map):
         if not b["new"]:
             if self.interact_widget.layout.display == "block":
                 self.interact_widget.layout.display = "none"
-                if self.draw_control_added:
-                    self.remove(self.draw_control)
-                    self.draw_control_added = False
-                if self.point_control_added:
-                    self.remove(self.point_control)
-                    self.point_control_added = False
+                self.remove_draw_controls()
+
+    @staticmethod
+    def create_widget_layout():
+        widget = Box(style={"max-width: 420px"})
+        widget.layout.flex_flow = "column"
+        widget.layout.max_height = "360px"
+        widget.layout.overflow = "auto"
+        return widget
 
     def create_interact_widget(self):
-        interact_widget = Box(style={"max-width: 420px"})
-        interact_widget.layout.flex_flow = "column"
-        interact_widget.layout.max_height = "360px"
-        interact_widget.layout.overflow = "auto"
+        interact_widget = self.create_widget_layout()
 
         tab_headers = ["Point", "Area"]
         tab_children = []
@@ -258,11 +267,15 @@ class StacIpyleaflet(Map):
         for tab in tab_headers:
             tab_content = VBox()
             if tab == "Point":
-                hbox = self.create_widget_tab("Marker", "Waiting for points of interest...", "Clear Markers")
+                hbox = self.create_widget_tab(
+                    "Marker", "Waiting for points of interest...", "Clear Markers"
+                )
                 tab_content.children = [VBox([hbox])]
                 tab_children.append(tab_content)
             elif tab == "Area":
-                hbox = self.create_widget_tab("Polygon", "Waiting for area of interest...", "Clear AOI Polygon")
+                hbox = self.create_widget_tab(
+                    "Polygon", "Waiting for area of interest...", "Clear AOI Polygon"
+                )
                 tab_content.children = [VBox([hbox])]
                 tab_children.append(tab_content)
         tab_widget.children = tab_children
@@ -274,10 +287,7 @@ class StacIpyleaflet(Map):
 
     # @NOTE: Possibly move into its own child class file
     def create_layers_widget(self):
-        layers_widget = Box(style={"max-width: 420px"})
-        layers_widget.layout.flex_flow = "column"
-        layers_widget.layout.max_height = "360px"
-        layers_widget.layout.overflow = "auto"
+        layers_widget = self.create_widget_layout()
 
         tab_headers = ["Biomass Layers", "Basemaps"]
         tab_children = []
