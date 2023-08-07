@@ -3,7 +3,7 @@ from urllib.parse import urlparse, parse_qs
 from typing import List
 from stac_ipyleaflet.constants import TITILER_ENDPOINT
 from stac_ipyleaflet.core import StacIpyleaflet
-from stac_ipyleaflet.stac_discovery.requests import make_get_request
+from stac_ipyleaflet.utilities.helpers import make_get_request
 
 
 class COGRequestedData:

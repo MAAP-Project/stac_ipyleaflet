@@ -18,6 +18,7 @@ from stac_ipyleaflet.constants import TITILER_STAC_ENDPOINT
 from stac_ipyleaflet.stac_discovery.stac_widget import StacDiscoveryWidget
 from stac_ipyleaflet.widgets.basemaps import BasemapsWidget
 
+
 class StacIpyleaflet(Map):
     histogram_layer: Popup
     warning_layer: Popup = None
@@ -27,7 +28,6 @@ class StacIpyleaflet(Map):
     titiler_stac_endpoint = TITILER_STAC_ENDPOINT
 
     def __init__(self, **kwargs):
-        from stac_ipyleaflet.utilities.helpers import Helpers
         from stac_ipyleaflet.widgets.inspect import InspectControlWidget
         from stac_ipyleaflet.widgets.draw import DrawControlWidget
 
@@ -67,7 +67,6 @@ class StacIpyleaflet(Map):
 
         self.point_control = InspectControlWidget.template(self)
         self.draw_control = DrawControlWidget.template(self)
-        Helpers.test_this(self)
         return None
 
     def create_load_gif(self):
@@ -173,7 +172,7 @@ class StacIpyleaflet(Map):
         if self.point_control_added:
             self.remove(self.point_control)
             self.point_control_added = False
-        return
+        return self
 
     # logic to handle main menu toggle buttons
     def toggle_layers_widget_display(self, b):
