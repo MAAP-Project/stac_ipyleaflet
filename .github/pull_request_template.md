@@ -12,6 +12,7 @@
 ## Checklist before requesting a review:
 - [ ] My code follows the guidelines of this project
 - [ ] I  performed a self-review of my code changes
+- [ ] I have added my changes to the change log (`HISTORY.rst`)
 - [ ] I have completed spell-checking, removed unnecessary print statements & commented-out code
 - [ ] I have commented my code, particularly in hard-to-understand areas
 - [ ] I have made corresponding changes to the documentation
