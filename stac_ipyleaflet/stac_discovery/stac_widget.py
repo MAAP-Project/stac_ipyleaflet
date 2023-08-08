@@ -66,10 +66,10 @@ class StacDiscoveryWidget:
             {"name": "MAAP STAC", "url": "https://stac.maap-project.org"},
             # {"name": "VEDA STAC", "url": "https://staging-stac.delta-backend.com"},
             # {"name": "MAAP STAC", "url": "https://wssn144yw1.execute-api.us-west-2.amazonaws.com/"},
-            {
-                "name": "Element84 Earth Search",
-                "url": "https://earth-search.aws.element84.com/v1",
-            },
+            # {
+            #     "name": "Element84 Earth Search",
+            #     "url": "https://earth-search.aws.element84.com/v1",
+            # },
             # {"name": "Microsoft Planetary Computer", "url": "https://planetarycomputer.microsoft.com/api/stac/v1"},
         ]
         # make list of name values from stac_catalogs
@@ -118,6 +118,7 @@ class StacDiscoveryWidget:
             value=self.stac_data["catalog"]["name"],
             style=styles["init"],
             layout=layouts["default"],
+            disabled=True,
         )
         catalogs_box = VBox(
             [
