@@ -60,7 +60,6 @@ class StacIpyleaflet(Map):
         self.inspect_widget = None
         self.marker_added = False
 
-        self.create_load_gif()  # @QUESTION: Is this even used though? Can we just get rid of it?
         self.create_buttons_layout()
         self.add_biomass_layers_options()
         self.add_custom_tools()
@@ -69,44 +68,27 @@ class StacIpyleaflet(Map):
         self.draw_control = DrawControlWidget.template(self)
         return None
 
-    def create_load_gif(self):
-        gif_file = files("stac_ipyleaflet.data").joinpath("loading.gif")
-        with open(gif_file, "rb") as f:
-            gif_widget = Image(
-                value=f.read(),
-                format="png",
-                width=200,
-                height=200,
-            )
-
-        loading_widget = VBox()
-        loading_widget.children = [gif_widget]
-        self.loading_widget_layer = Popup(
-            child=loading_widget, min_width=200, min_height=200
-        )
-        return
-
     def create_buttons_layout(self):
         interact_btn = self.create_widget_button(
-            "interact",
-            "Interact with the map",
-            "Interact",
-            "pencil",
-            self.toggle_interact_widget_display,
+            buttonId = "interact",
+            toolTipMsg = "Interact with the map",
+            description = "Interact",
+            icon = "pencil",
+            onClick = self.toggle_interact_widget_display,
         )
         layers_btn = self.create_widget_button(
-            "layers",
-            "Open/Close Layers Menu",
-            "Layers",
-            "map-o",
-            self.toggle_layers_widget_display,
+            buttonId = "layers",
+            toolTipMsg = "Open/Close Layers Menu",
+            description = "Layers",
+            icon = "map-o",
+            onClick = self.toggle_layers_widget_display,
         )
         stac_btn = self.create_widget_button(
-            "stac",
-            "Open/Close STAC Data Search",
-            "STAC Data",
-            "search",
-            self.toggle_stac_widget_display,
+            buttonId = "stac",
+            toolTipMsg = "Open/Close STAC Data Search",
+            description = "STAC Data",
+            icon = "search",
+            onClick = self.toggle_stac_widget_display,
         )
 
         buttons_box_layout = Layout(
@@ -124,32 +106,33 @@ class StacIpyleaflet(Map):
         display(buttons_box)
         return buttons_box
 
-    def create_widget_button(self, buttonId, toolTipMsg, description, icon, onClick):
+    def create_widget_button(self, **kwargs):
         main_button_layout = Layout(
             width="120px", height="35px", border="1px solid #4682B4"
         )
         btn = ToggleButton(
-            description=description, icon=icon, layout=main_button_layout
+            description=kwargs["description"], icon=kwargs["icon"], layout=main_button_layout
         )
         btn.style.text_color = self.accent_color
         btn.style.button_color = "transparent"
-        btn.tooltip = toolTipMsg
-        btn.observe(onClick, type="change", names=["value"])
-        self.buttons[buttonId] = btn
+        btn.tooltip = kwargs["toolTipMsg"]
+        btn.observe(kwargs["onClick"], type="change", names=["value"])
+        btn_id = kwargs["buttonId"]
+        self.buttons[btn_id] = btn
         return btn
 
-    def create_widget_tab(self, desc, emptyValueState, btnDesc):
+    def create_widget_tab(self, **kwargs):
         desc = HTML(
-            value=f"<h4>{desc}</h4>",
+            value=f"<h4>{kwargs['desc']}</h4>",
         )
         data_value = HTML(
-            value=f"<code>{emptyValueState}</code>",
+            value=f"<code>{kwargs['emptyValueState']}</code>",
             description="",
         )
 
         button = Button(
-            description=btnDesc,
-            tooltip=btnDesc,
+            description=kwargs["btnDesc"],
+            tooltip=kwargs["btnDesc"],
             icon="trash",
             disabled=True,
         )
@@ -262,13 +245,17 @@ class StacIpyleaflet(Map):
             tab_content = VBox()
             if tab == "Point":
                 hbox = self.create_widget_tab(
-                    "Marker", "Waiting for points of interest...", "Clear Markers"
+                    desc = "Marker",
+                    emptyValueState = "Waiting for points of interest...",
+                    btnDesc = "Clear Markers"
                 )
                 tab_content.children = [VBox([hbox])]
                 tab_children.append(tab_content)
             elif tab == "Area":
                 hbox = self.create_widget_tab(
-                    "Polygon", "Waiting for area of interest...", "Clear AOI Polygon"
+                    desc = "Polygon",
+                    emptyValueState = "Waiting for area of interest...",
+                    btnDesc = "Clear AOI Polygon"
                 )
                 tab_content.children = [VBox([hbox])]
                 tab_children.append(tab_content)
