@@ -1,16 +1,11 @@
 from ipyleaflet import DrawControl, GeoJSON
 from ipywidgets import Box, Output
-
-# @NOTE: This should be an extension of the IPYLEAFLET Class. Currently it is just being passed
-# in instead due to import errors
-
-# @TODO: Fix linting errors caused by inferred inheritance and just pass in params instead
+from stac_ipyleaflet.core import StacIpyleaflet
 
 
 # @TODO: Break out shared logic between widgets into a utilities directory
-class DrawControlWidget:
-    def template(self, **kwargs) -> Box(style={"max_height: 200px"}):
-        main = self
+class DrawControlWidget(StacIpyleaflet):
+    def template(self) -> Box(style={"max_height: 200px"}):
         bbox_out = Output()
 
         # Set unwanted draw controls to False or empty objects
@@ -38,7 +33,7 @@ class DrawControlWidget:
 
         for i in range(2):
             tabs[f"child{i}"] = (
-                main.interact_widget.children[0]
+                self.interact_widget.children[0]
                 .children[i]
                 .children[0]
                 .children[0]
@@ -52,15 +47,15 @@ class DrawControlWidget:
         aoi_clear_button = area_tab_children[2]
 
         # @TODO-CLEANUP: Duplication between tabs, pull logic out into a common utilities file
-        def handle_clear(self):
-            draw_layer = main.find_layer("draw_layer")
-            main.remove_layer(draw_layer)
+        def handle_clear(event):
+            draw_layer = self.find_layer("draw_layer")
+            self.remove_layer(draw_layer)
             aoi_coords.value = "<code>Waiting for area of interest...</code>"
             aoi_clear_button.disabled = True
 
-        def handle_draw(self, action, geo_json, **kwargs):
-            main.aoi_coordinates = []
-            main.aoi_bbox = ()
+        def handle_draw(event, action, geo_json, **kwargs):
+            self.aoi_coordinates = []
+            self.aoi_bbox = ()
 
             if "Coordinates" in point_tab_children[1].value:
                 area_tab_children[
@@ -78,7 +73,7 @@ class DrawControlWidget:
                             "weight": 3,
                         },
                     )
-                    main.add_layer(geojson_layer)
+                    self.add_layer(geojson_layer)
                     raw_coordinates = geo_json["geometry"]["coordinates"][0]
 
                     def bounding_box(points):
@@ -91,12 +86,12 @@ class DrawControlWidget:
                         )
 
                     bbox = bounding_box(raw_coordinates)
-                    main.aoi_coordinates = raw_coordinates
-                    main.aoi_bbox = bbox
+                    self.aoi_coordinates = raw_coordinates
+                    self.aoi_bbox = bbox
                     coords_list = [coord for coord in raw_coordinates]
                     coords = ",<br/>".join(map(str, coords_list))
                     aoi_coords.value = f"<p><b>Coordinates:</b></p><code>{coords}</code><br/><p><b>BBox:</b></p><code>{bbox}</code>"
-                    self.clear()
+                    event.clear()
                     aoi_clear_button.disabled = False
                     aoi_clear_button.on_click(handle_clear)
 
