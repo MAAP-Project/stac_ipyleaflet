@@ -14,3 +14,8 @@ History
 * First public release (beta).
 
 
+0.3.0-dev (2023-08-08)
+----------------------
+
+* Added automatic COG filter to narrow down available collection (Issue #66)
+* Added interact by point tool to get coordinates and raster values at a location (Issue #64)
