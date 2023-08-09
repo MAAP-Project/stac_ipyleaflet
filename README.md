@@ -34,7 +34,7 @@ For example when adding documentation, the branch name should look something lik
 From the root of this project and in your dev container environment. Run `pytest` in the terminal. If you want to enable logging, run `pytest -s`. 
 
 ### Manual Testing
-To test new features or changes in the `Algorithm Development Environment` (ADE Env). Navigate to your jupyter notebook's terminal and run the following...
+To test new features or changes in the `Algorithm Development Environment` (ADE). Navigate to your jupyter notebook's terminal and run the following...
 1. `pip uninstall stac_ipyleaflet`
 2. `pip install git+https://github.com/MAAP-Project/stac_ipyleaflet.git#egg-info=stac_ipyleaflet`
 This should install `stac_ipyleaflet` with the latest commits from the `main` branch
