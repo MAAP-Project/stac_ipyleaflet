@@ -26,8 +26,19 @@ To contribute to this codebase, clone this repository down and create a new bran
 For example when adding documentation, the branch name should look something like `docs/{special-branch-name}`. Or when refactoring for code optimization, the branch name should look something like `refactor/{special-branch-name}`
 
 ### Testing
-Unit testing with Pytest
-@TODO: To Be Developed further...Think about what is the point of testing? We should just test for core pieces of functionality and not stick so closely to a threshold
+### Unit Testing with Pytest
+@TODO: To Be Developed further...Think about what is the point of testing? We should just test for core pieces of functionality and not stick so closely to a threshold?
+
+**How to run unit tests**
+
+From the root of this project and in your dev container environment. Run `pytest` in the terminal. If you want to enable logging, run `pytest -s`. 
+
+### Manual Testing
+To test new features or changes in the `Algorithm Development Environment` (ADE Env). Navigate to your jupyter notebook's terminal and run the following...
+1. `pip uninstall stac_ipyleaflet`
+2. `pip install git+https://github.com/MAAP-Project/stac_ipyleaflet.git#egg-info=stac_ipyleaflet`
+This should install `stac_ipyleaflet` with the latest commits from the `main` branch
+> Note: pip installing with the `--upgrade` flag will not work unless a change in version in the `setup.cfg` file was detected
 
 ## Additional requirements
 
