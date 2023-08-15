@@ -53,37 +53,52 @@ class InspectControlWidget(StacIpyleaflet):
 
         def get_visible_layers_data(coordinates) -> List[LayerData]:
             visible_layers_data = []
-            cog_partial_request_path = (
-                f"{TITILER_ENDPOINT}/cog/point/{coordinates[0]},{coordinates[1]}?url="
-            )
             for layer in self.applied_layers:
                 if "/cog" in layer.url:
                     parsed_url = urlparse(layer.url)
                     parsed_query = parse_qs(parsed_url.query)
                     url = parsed_query["url"][0]
-                    data = make_get_request(f"{cog_partial_request_path}{url}")
-                    if data:
+                    cog_partial_request_path = f"{TITILER_ENDPOINT}/cog/point/{coordinates[0]},{coordinates[1]}?url="
+                    response = make_get_request(f"{cog_partial_request_path}{url}")
+                    if response.status_code == 200:
+                        data = response.json()
                         visible_layers_data.append(
-                            {"layer_name": layer.name, "data": data.json()}
+                            {"layer_name": layer.name, "data": data}
                         )
-                # @TODO: Add logic to grab point data for "/mosaics" layers here
-                # @NOTE: Blocked until Impact Titiler is updated to access /mosaicsjson/point
+                elif "/mosaics" in layer.url:
+                    parsed_url = urlparse(layer.url)
+                    mosaic_id = parsed_url.path.split("/")[2]
+                    mosaic_request_url = f"{TITILER_ENDPOINT}/mosaics/{mosaic_id}/point/{coordinates[0]},{coordinates[1]}"
+                    response = make_get_request(mosaic_request_url)
+                    data = response.json()
+                    if response.status_code == 200:
+                        data_to_display = {
+                            "coordinates": data["coordinates"],
+                            "values": data["values"][0][1],
+                            "band_names": data["values"][0][-1],
+                        }
+                        visible_layers_data.append(
+                            {"layer_name": layer.name, "data": data_to_display}
+                        )
+                    if response.status_code == 404:
+                        visible_layers_data.append({"layer_name": layer.name, **data})
             return visible_layers_data
 
-        def display_layer_data(layers_data: LayerData):
-            point_data.value = ""
+        def display_layer_data(coordinates: List[int], layers_data: LayerData):
+            point_data.value = f"""
+                    <p>
+                        Coordinates: {coordinates}
+                    </p>
+                """
 
-            def create_layer_data_html(layer_name, coordinates, values, band_names):
-                template = f"""
+            def create_layer_data_html(layer_name, values, band_names):
+                return f"""
                     <p>
                         <b>
                             {layer_name}
                         </b>
                     </p>
                     <ul>
-                        <li>
-                            Coordinates: {coordinates}
-                        </li>
                         <li>
                             Values: {values}
                         </li>
@@ -92,15 +107,34 @@ class InspectControlWidget(StacIpyleaflet):
                         </li>
                     </ul>
                 """
-                return template
+
+            def create_no_data_html(layer_name, msg):
+                return f"""
+                    <p>
+                        <b>
+                            {layer_name}
+                        </b>
+                    </p>
+                    <p>
+                        {msg}
+                    </p>
+                """
 
             for layer in layers_data:
-                point_data.value += create_layer_data_html(
-                    layer["layer_name"],
-                    layer["data"]["coordinates"],
-                    layer["data"]["values"],
-                    layer["data"]["band_names"],
-                )
+                if "data" in layer:
+                    point_data.value += create_layer_data_html(
+                        layer["layer_name"],
+                        layer["data"]["values"],
+                        layer["data"]["band_names"],
+                    )
+                elif "data" not in layer and "detail" in layer:
+                    point_data.value += create_no_data_html(
+                        layer["layer_name"], layer["detail"]
+                    )
+                else:
+                    point_data.value += create_no_data_html(
+                        layer["layer_name"], "No data to report"
+                    )
             return
 
         def handle_interaction(event, action, geo_json, **kwargs):
@@ -130,7 +164,7 @@ class InspectControlWidget(StacIpyleaflet):
                     if len(self.applied_layers):
                         layers_data = get_visible_layers_data(event.coordinates)
                         if layers_data:
-                            display_layer_data(layers_data)
+                            display_layer_data(event.coordinates, layers_data)
                         else:
                             point_data.value = f"<p><b>Coordinates:</b></p><code>{event.coordinates}</code><br/>"
                     elif not len(self.applied_layers):
