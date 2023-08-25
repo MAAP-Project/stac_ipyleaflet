@@ -53,6 +53,11 @@ Once these have been installed, follow these steps below:
 ![](/public/images/getting-started-conda-activate.png)
 3. Run `conda init`
 4. Run `pip install -r requirements.txt`
+5. Create a `.env` file at the root of this codebase. The file should contain and look like...
+```
+STAC_ENDPOINT=https://titiler-stac.maap-project.org
+TITILER_ENDPOINT=https://titiler.maap-project.org
+```
 5. Run `jupyter lab` and this should reveal two links in the log, you would want to click and open any of those two!
 ![](/public/images/getting-started-links.png)
 6. Once opening the link, click on the `demo.ipynb` file and run the code snippet to produce the map! If you can get the map to run, then you have successfully ran the code in your local env :raised_hands:
