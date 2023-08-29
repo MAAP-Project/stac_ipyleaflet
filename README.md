@@ -55,7 +55,7 @@ Once these have been installed, follow these steps below:
 4. Run `pip install -r requirements.txt`
 5. Create a `.env` file at the root of this codebase. The file should contain and look like...
 ```
-STAC_ENDPOINT=https://titiler-stac.maap-project.org
+TITILER_STAC_ENDPOINT=https://titiler-stac.maap-project.org
 TITILER_ENDPOINT=https://titiler.maap-project.org
 STAC_CATALOG={"name": "MAAP STAC", "url": "https://stac.maap-project.org"}
 ```

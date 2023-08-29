@@ -85,9 +85,7 @@ class StacIpyleaflet(Map):
             warning_log += "os.environ['TITILER_ENDPOINT']='REPLACE_WITH_TITILER_URL'\n"
         if STAC_CATALOG is None:
             missing.append("STAC_CATALOG")
-            warning_log += (
-                "os.environ['STAC_CATALOG']='REPLACE_WITH_STAC_CATALOG_OBJECT'\n"
-            )
+            warning_log += "os.environ['STAC_CATALOG'] = {'name': 'REPLACE_WITH_STAC_CATALOG_NAME_FOR_LABEL_USE', 'url': 'REPLACE_WITH_STAC_CATALOG_URL'}\n"
         if len(missing) > 0:
             logging.warning(
                 f"Following environment variable(s) are missing {missing} \n To set these environment variables, run this code: \n \n import os \n {warning_log}"
