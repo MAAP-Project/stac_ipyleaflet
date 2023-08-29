@@ -12,7 +12,11 @@ from rio_tiler.models import ImageData
 from shapely.geometry import Polygon
 import xarray as xr
 
-from stac_ipyleaflet.constants import TITILER_STAC_ENDPOINT, TITILER_ENDPOINT
+from stac_ipyleaflet.constants import (
+    STAC_CATALOG,
+    TITILER_STAC_ENDPOINT,
+    TITILER_ENDPOINT,
+)
 from stac_ipyleaflet.stac_discovery.stac_widget import StacDiscoveryWidget
 from stac_ipyleaflet.widgets.basemaps import BasemapsWidget
 from stac_ipyleaflet.utilities.helpers import add_layers_options
@@ -69,9 +73,25 @@ class StacIpyleaflet(Map):
         return None
 
     def check_for_env_vars(self):
-        required = [TITILER_STAC_ENDPOINT, TITILER_ENDPOINT]
-        if None in required:
-            logging.error("Missing required environment variable(s)")
+        missing = []
+        warning_log = ""
+        if TITILER_STAC_ENDPOINT is None:
+            missing.append("TITILER_STAC_ENDPOINT")
+            warning_log += (
+                "os.environ['TITILER_STAC_ENDPOINT']='REPLACE_WITH_TITILER_STAC_URL'\n"
+            )
+        if TITILER_ENDPOINT is None:
+            missing.append("TITILER_ENDPOINT")
+            warning_log += "os.environ['TITILER_ENDPOINT']='REPLACE_WITH_TITILER_URL'\n"
+        if STAC_CATALOG is None:
+            missing.append("STAC_CATALOG")
+            warning_log += (
+                "os.environ['STAC_CATALOG']='REPLACE_WITH_STAC_CATALOG_OBJECT'\n"
+            )
+        if len(missing) > 0:
+            logging.warning(
+                f"Following environment variable(s) are missing {missing} \n To set these environment variables, run this code: \n \n import os \n {warning_log}"
+            )
         return
 
     def add_default_layer_options(self):
