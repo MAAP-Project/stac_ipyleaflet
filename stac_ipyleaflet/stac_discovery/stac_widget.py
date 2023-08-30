@@ -12,7 +12,7 @@ from ipywidgets import (
 )
 import logging
 from pystac_client import Client
-from stac_ipyleaflet.constants import TITILER_ENDPOINT
+from stac_ipyleaflet.constants import STAC_CATALOG, TITILER_ENDPOINT
 from stac_ipyleaflet.stac_discovery.stac import Stac
 
 
@@ -62,16 +62,7 @@ class StacDiscoveryWidget:
         stac_widget.layout.flex_flow = "column"
         stac_widget.layout.overflow = "auto"
 
-        stac_catalogs = [
-            {"name": "MAAP STAC", "url": "https://stac.maap-project.org"},
-            # {"name": "VEDA STAC", "url": "https://staging-stac.delta-backend.com"},
-            # {"name": "MAAP STAC", "url": "https://wssn144yw1.execute-api.us-west-2.amazonaws.com/"},
-            # {
-            #     "name": "Element84 Earth Search",
-            #     "url": "https://earth-search.aws.element84.com/v1",
-            # },
-            # {"name": "Microsoft Planetary Computer", "url": "https://planetarycomputer.microsoft.com/api/stac/v1"},
-        ]
+        stac_catalogs = [STAC_CATALOG]
         # make list of name values from stac_catalogs
         catalog_options = sorted([c["name"] for c in stac_catalogs])
         for cat in stac_catalogs:
@@ -828,7 +819,7 @@ class StacDiscoveryWidget:
                                     self.stac_data["layer_added"] = False
                                 applied_tile_layer = self.add_tile_layer(
                                     url=tile_url,
-                                    name=f'{collections_dropdown.value}, {items_dropdown.value}',
+                                    name=f"{collections_dropdown.value}, {items_dropdown.value}",
                                     attribution=items_dropdown.value,
                                 )
                                 self.applied_layers.append(applied_tile_layer)

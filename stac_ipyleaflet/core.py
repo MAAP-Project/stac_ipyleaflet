@@ -1,6 +1,4 @@
 """Main module."""
-import csv
-from importlib.resources import files
 from ipyleaflet import Map, Popup, TileLayer, WidgetControl
 from IPython.display import display
 from ipywidgets import Box, HBox, VBox, Layout, SelectionSlider, HTML, IntSlider, Image
@@ -14,9 +12,14 @@ from rio_tiler.models import ImageData
 from shapely.geometry import Polygon
 import xarray as xr
 
-from stac_ipyleaflet.constants import TITILER_STAC_ENDPOINT
+from stac_ipyleaflet.constants import (
+    STAC_CATALOG,
+    TITILER_STAC_ENDPOINT,
+    TITILER_ENDPOINT,
+)
 from stac_ipyleaflet.stac_discovery.stac_widget import StacDiscoveryWidget
 from stac_ipyleaflet.widgets.basemaps import BasemapsWidget
+from stac_ipyleaflet.utilities.helpers import add_layers_options
 
 
 class StacIpyleaflet(Map):
@@ -61,34 +64,60 @@ class StacIpyleaflet(Map):
         self.marker_added = False
 
         self.create_buttons_layout()
-        self.add_biomass_layers_options()
+        self.check_for_env_vars()
+        self.add_default_layer_options()
         self.add_custom_tools()
 
         self.point_control = InspectControlWidget.template(self)
         self.draw_control = DrawControlWidget.template(self)
         return None
 
+    def check_for_env_vars(self):
+        missing = []
+        warning_log = ""
+        if TITILER_STAC_ENDPOINT is None:
+            missing.append("TITILER_STAC_ENDPOINT")
+            warning_log += (
+                "os.environ['TITILER_STAC_ENDPOINT']='REPLACE_WITH_TITILER_STAC_URL'\n"
+            )
+        if TITILER_ENDPOINT is None:
+            missing.append("TITILER_ENDPOINT")
+            warning_log += "os.environ['TITILER_ENDPOINT']='REPLACE_WITH_TITILER_URL'\n"
+        if STAC_CATALOG is None:
+            missing.append("STAC_CATALOG")
+            warning_log += "os.environ['STAC_CATALOG'] = {'name': 'REPLACE_WITH_STAC_CATALOG_NAME_FOR_LABEL_USE', 'url': 'REPLACE_WITH_STAC_CATALOG_URL'}\n"
+        if len(missing) > 0:
+            logging.warning(
+                f"Following environment variable(s) are missing {missing} \n To set these environment variables, run this code: \n \n import os \n {warning_log}"
+            )
+        return
+
+    def add_default_layer_options(self):
+        if TITILER_ENDPOINT is not None and "maap" in TITILER_ENDPOINT:
+            add_layers_options(self.add_layer, "biomass-layers.csv")
+        return
+
     def create_buttons_layout(self):
         interact_btn = self.create_widget_button(
-            buttonId = "interact",
-            toolTipMsg = "Interact with the map",
-            description = "Interact",
-            icon = "pencil",
-            onClick = self.toggle_interact_widget_display,
+            buttonId="interact",
+            toolTipMsg="Interact with the map",
+            description="Interact",
+            icon="pencil",
+            onClick=self.toggle_interact_widget_display,
         )
         layers_btn = self.create_widget_button(
-            buttonId = "layers",
-            toolTipMsg = "Open/Close Layers Menu",
-            description = "Layers",
-            icon = "map-o",
-            onClick = self.toggle_layers_widget_display,
+            buttonId="layers",
+            toolTipMsg="Open/Close Layers Menu",
+            description="Layers",
+            icon="map-o",
+            onClick=self.toggle_layers_widget_display,
         )
         stac_btn = self.create_widget_button(
-            buttonId = "stac",
-            toolTipMsg = "Open/Close STAC Data Search",
-            description = "STAC Data",
-            icon = "search",
-            onClick = self.toggle_stac_widget_display,
+            buttonId="stac",
+            toolTipMsg="Open/Close STAC Data Search",
+            description="STAC Data",
+            icon="search",
+            onClick=self.toggle_stac_widget_display,
         )
 
         buttons_box_layout = Layout(
@@ -111,7 +140,9 @@ class StacIpyleaflet(Map):
             width="120px", height="35px", border="1px solid #4682B4"
         )
         btn = ToggleButton(
-            description=kwargs["description"], icon=kwargs["icon"], layout=main_button_layout
+            description=kwargs["description"],
+            icon=kwargs["icon"],
+            layout=main_button_layout,
         )
         btn.style.text_color = self.accent_color
         btn.style.button_color = "transparent"
@@ -245,17 +276,17 @@ class StacIpyleaflet(Map):
             tab_content = VBox()
             if tab == "Point":
                 hbox = self.create_widget_tab(
-                    desc = "Marker",
-                    emptyValueState = "Waiting for points of interest...",
-                    btnDesc = "Clear Markers"
+                    desc="Marker",
+                    emptyValueState="Waiting for points of interest...",
+                    btnDesc="Clear Markers",
                 )
                 tab_content.children = [VBox([hbox])]
                 tab_children.append(tab_content)
             elif tab == "Area":
                 hbox = self.create_widget_tab(
-                    desc = "Polygon",
-                    emptyValueState = "Waiting for area of interest...",
-                    btnDesc = "Clear AOI Polygon"
+                    desc="Polygon",
+                    emptyValueState="Waiting for area of interest...",
+                    btnDesc="Clear AOI Polygon",
                 )
                 tab_content.children = [VBox([hbox])]
                 tab_children.append(tab_content)
@@ -418,19 +449,6 @@ class StacIpyleaflet(Map):
         self.add(layers_control)
         self.add(stack_control)
         self.add(interact_control)
-
-    def add_biomass_layers_options(self):
-        biomass_file = files("stac_ipyleaflet.data").joinpath("biomass-layers.csv")
-        with open(biomass_file, newline="") as f:
-            csv_reader = csv.reader(f)
-            next(csv_reader, None)  # skip the headers
-            sorted_csv = sorted(csv_reader, key=lambda row: row[0], reverse=True)
-            for row in sorted_csv:
-                name, tile_url = row[0], row[1]
-                tile_layer = TileLayer(
-                    url=tile_url, attribution=name, name=name, visible=False
-                )
-                self.add_layer(tile_layer)
 
     def find_layer(self, name: str):
         layers = self.layers
