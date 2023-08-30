@@ -19,3 +19,6 @@ History
 
 * Added automatic COG filter to narrow down available collection (Issue #66)
 * Added interact by point tool to get coordinates and raster values at a location (Issue #64)
+
+0.4.0 (Upcoming)
+----------------------
