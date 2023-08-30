@@ -14,7 +14,7 @@ History
 * First public release (beta).
 
 
-0.3.0-dev (2023-08-08)
+0.3.0 (2023-08-30)
 ----------------------
 
 * Added automatic COG filter to narrow down available collection (Issue #66)
