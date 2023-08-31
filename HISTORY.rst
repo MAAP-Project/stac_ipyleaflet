@@ -19,3 +19,8 @@ History
 
 * Added automatic COG filter to narrow down available collection (Issue #66)
 * Added interact by point tool to get coordinates and raster values at a location (Issue #64)
+
+0.3.1 (2023-08-31)
+----------------------
+
+* Patch to split STAC_CATALOG environment variable up to STAC_CATALOG_NAME and STAC_CATALOG_URL
