@@ -8,6 +8,4 @@ REQUEST_TIMEOUT = 3  # three second timeout
 RESCALE = "0,50"
 TITILER_ENDPOINT = os.getenv("TITILER_ENDPOINT")
 TITILER_STAC_ENDPOINT = os.getenv("TITILER_STAC_ENDPOINT")
-STAC_CATALOG = (
-    json.loads(os.getenv("STAC_CATALOG")) if os.getenv("STAC_CATALOG") else None
-)
+STAC_CATALOG = {"name": os.getenv("STAC_CATALOG_NAME"), "url": os.getenv("STAC_CATALOG_URL")}
