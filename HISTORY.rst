@@ -24,3 +24,8 @@ History
 ----------------------
 
 * Patch to split STAC_CATALOG environment variable up to STAC_CATALOG_NAME and STAC_CATALOG_URL
+
+0.3.2 (2023-09-01)
+----------------------
+
+* Bug fix to add dotenv to install_requires
