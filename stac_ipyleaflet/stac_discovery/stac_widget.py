@@ -12,7 +12,7 @@ from ipywidgets import (
 )
 import logging
 from pystac_client import Client
-from stac_ipyleaflet.constants import STAC_CATALOG, TITILER_ENDPOINT
+from stac_ipyleaflet.constants import STAC_BROWSER_URL, STAC_CATALOG, TITILER_ENDPOINT
 from stac_ipyleaflet.stac_discovery.stac import Stac
 
 
@@ -68,18 +68,20 @@ class StacDiscoveryWidget:
         for cat in stac_catalogs:
             stac_client = Client.open(cat["url"], headers=[])
             collections_object = stac_client.get_all_collections()
-            collections = Stac.organize_collections(collections_object)
-            cat["collections"] = collections
+            collections, bad_collections = Stac.organize_collections(collections_object)
+            cat["collections"] = collections if collections is not None else []
         # set default catalog based on name
-        selected_catalog = [cat for cat in stac_catalogs if "MAAP" in cat["name"]][0]
-
+        selected_catalog = [
+            cat for cat in stac_catalogs if cat["name"] == STAC_CATALOG["name"]
+        ][0]
         if "collections" not in selected_catalog:
             logging.warn("NO COLLECTIONS FOUND")
-
+            # @TODO: Currently if this was the case, this app would break, we need to move all collections logic into its on fn and then apply this logic conditionally
         collections_filter_checkbox = Checkbox(
             value=True, layout=layouts["checkbox"], indent=False
         )
 
+        # @TODO: This selected collections logic should be broken out into its own function for cleaner code
         # available collections have been tagged as `has_cog: True` when reviewing item_assets
         def get_available_collections(catalog):
             if collections_filter_checkbox.value:
@@ -92,10 +94,16 @@ class StacDiscoveryWidget:
                     [c for c in catalog["collections"]], key=lambda c: c["id"]
                 )
 
-        selected_collection_options = get_available_collections(
-            catalog=selected_catalog
-        )
-        selected_collection = selected_collection_options[0]
+        selected_collection = None
+        selected_collection_options = []
+        if (
+            "collections" in selected_catalog
+            and len(selected_catalog["collections"]) > 0
+        ):
+            selected_collection_options = get_available_collections(
+                catalog=selected_catalog
+            )
+            selected_collection = selected_collection_options[0]
         self.stac_data = {
             "catalog": selected_catalog,
             "collection": selected_collection,
@@ -121,107 +129,134 @@ class StacDiscoveryWidget:
                 catalogs_dropdown,
             ]
         )
-        collections_dropdown = Dropdown(
-            options=[c["id"] for c in selected_collection_options],
-            value=self.stac_data["collection"]["id"],
-            style=styles["init"],
-            layout=layouts["default"],
-        )
-        collections_filter_label = HTML(value="<b>Only Show Displayable Items</b>")
-        collections_filter_desc = HTML(
-            value="<em>Currently, only Cloud-Optimized GeoTiffs are supported</em>",
-            style=styles["init"],
-            layout=layouts["subtitle"],
-        )
-        collections_checkbox_box = HBox(
-            [collections_filter_checkbox, collections_filter_label]
-        )
-        collections_filter_box = VBox(
-            [
-                collections_checkbox_box,
-                collections_filter_desc,
-            ]
-        )
-        collections_box = VBox(
-            [
-                HTML(
-                    value="<b>Collection</b>",
+
+        # @TODO: We need to come back here and isolate the collections logic to also make it easier to conditionally show
+        collections_dropdown = None
+        collections_box = None
+        collection_description_box = None
+        collection_url_box = None
+        collection_dates_box = None
+        bad_collections_msg = None
+        if (
+            len(selected_collection_options) > 0
+            or self.stac_data["collection"] is not None
+        ):
+            collections_dropdown = Dropdown(
+                options=[c["id"] for c in selected_collection_options]
+                if len(selected_collection_options) > 0
+                else [],
+                value=self.stac_data["collection"]["id"],
+                style=styles["init"],
+                layout=layouts["default"],
+            )
+            collections_filter_label = HTML(value="<b>Only Show Displayable Items</b>")
+            collections_filter_desc = HTML(
+                value="<em>Currently, only Cloud-Optimized GeoTiffs are supported</em>",
+                style=styles["init"],
+                layout=layouts["subtitle"],
+            )
+            collections_checkbox_box = HBox(
+                [collections_filter_checkbox, collections_filter_label]
+            )
+            collections_filter_box = VBox(
+                [
+                    collections_checkbox_box,
+                    collections_filter_desc,
+                ]
+            )
+            collections_box = VBox(
+                [
+                    HTML(
+                        value="<b>Collection</b>",
+                        style=styles["init"],
+                        layout=layouts["default"],
+                    ),
+                    collections_dropdown,
+                    collections_filter_box,
+                ]
+            )
+            collection_description = HTML(
+                value=f'<div style="{styles["desc"]}">{self.stac_data["collection"]["description"]}</div>',
+                style=styles["init"],
+                layout=layouts["default"],
+            )
+            collection_description_box = VBox(
+                [
+                    HTML(
+                        value="<b>Description</b>",
+                        style=styles["init"],
+                        layout=layouts["header"],
+                    ),
+                    collection_description,
+                ]
+            )
+            collection_url = HTML(
+                value=f'<a href={self.stac_data["collection"]["href"]} target="_blank">{self.stac_data["collection"]["href"]}</a>',
+                style=styles["init"],
+                layout=layouts["default"],
+            )
+
+            # @TODO: We need to come here clean this up to make it more agnostic
+            if "maap" in STAC_BROWSER_URL:
+                stac_browser_url = self.stac_data["collection"]["href"].replace(
+                    "https://", STAC_BROWSER_URL
+                )
+            elif "veda" in STAC_BROWSER_URL:
+                stac_browser_url = self.stac_data["collection"]["href"].replace(
+                    STAC_CATALOG["url"], STAC_BROWSER_URL
+                )
+            collection_url_browser = HTML(
+                value=f'<a href={stac_browser_url} target="_blank"><b>View in STAC Browser</b></a>',
+                style=styles["init"],
+                layout=layouts["default"],
+            )
+            collection_url.style.text_color = "blue"
+            collection_url_browser.style.text_color = "blue"
+            collection_url_box = VBox(
+                [
+                    HTML(
+                        value="<b>URL</b>",
+                        style=styles["init"],
+                        layout=layouts["header"],
+                    ),
+                    collection_url,
+                    collection_url_browser,
+                ]
+            )
+            collection_start_date = DatePicker(
+                value=datetime.strptime(
+                    self.stac_data["collection"]["start_date"], "%Y-%m-%d"
+                ),
+                description="Start",
+                disabled=False if collections_dropdown.value else True,
+                style=styles["init"],
+                layout=layouts["default"],
+            )
+            collection_end_date = DatePicker(
+                value=datetime.strptime(
+                    self.stac_data["collection"]["end_date"], "%Y-%m-%d"
+                ),
+                description="End",
+                disabled=False if collections_dropdown.value else True,
+                style=styles["init"],
+                layout=layouts["default"],
+            )
+            collection_dates_box = VBox(
+                [
+                    HTML(
+                        value="<b>Date Range</b>",
+                        style=styles["init"],
+                        layout=layouts["header"],
+                    ),
+                    HBox([collection_start_date, collection_end_date]),
+                ]
+            )
+            if len(bad_collections) > 0:
+                bad_collections_msg = HTML(
+                    value=f'<div style="{styles["desc"]}">Invalid STAC Collections {bad_collections}</div>',
                     style=styles["init"],
                     layout=layouts["default"],
-                ),
-                collections_dropdown,
-                collections_filter_box,
-            ]
-        )
-        collection_description = HTML(
-            value=f'<div style="{styles["desc"]}">{self.stac_data["collection"]["description"]}</div>',
-            style=styles["init"],
-            layout=layouts["default"],
-        )
-        collection_description_box = VBox(
-            [
-                HTML(
-                    value="<b>Description</b>",
-                    style=styles["init"],
-                    layout=layouts["header"],
-                ),
-                collection_description,
-            ]
-        )
-        collection_url = HTML(
-            value=f'<a href={self.stac_data["collection"]["href"]} target="_blank">{self.stac_data["collection"]["href"]}</a>',
-            style=styles["init"],
-            layout=layouts["default"],
-        )
-        stac_browser_url = self.stac_data["collection"]["href"].replace(
-            "https://", "https://stac-browser.maap-project.org/external/"
-        )
-        collection_url_browser = HTML(
-            value=f'<a href={stac_browser_url} target="_blank"><b>View in STAC Browser</b></a>',
-            style=styles["init"],
-            layout=layouts["default"],
-        )
-        collection_url.style.text_color = "blue"
-        collection_url_browser.style.text_color = "blue"
-        collection_url_box = VBox(
-            [
-                HTML(
-                    value="<b>URL</b>",
-                    style=styles["init"],
-                    layout=layouts["header"],
-                ),
-                collection_url,
-                collection_url_browser,
-            ]
-        )
-        collection_start_date = DatePicker(
-            value=datetime.strptime(
-                self.stac_data["collection"]["start_date"], "%Y-%m-%d"
-            ),
-            description="Start",
-            disabled=False if collections_dropdown.value else True,
-            style=styles["init"],
-            layout=layouts["default"],
-        )
-        collection_end_date = DatePicker(
-            value=datetime.strptime(
-                self.stac_data["collection"]["end_date"], "%Y-%m-%d"
-            ),
-            description="End",
-            disabled=False if collections_dropdown.value else True,
-            style=styles["init"],
-            layout=layouts["default"],
-        )
-        collection_dates_box = VBox(
-            [
-                HTML(
-                    value="<b>Date Range</b>",
-                    style=styles["init"],
-                    layout=layouts["header"],
-                ),
-                HBox([collection_start_date, collection_end_date]),
-            ]
-        )
+                )
         defaultItemsDropdownText = "Select an Item"
         items_dropdown = Dropdown(
             options=[], value=None, style=styles["init"], layout=layouts["default"]
@@ -505,14 +540,29 @@ class StacDiscoveryWidget:
         for label in stac_tab_labels:
             tab_content = VBox()
             if label == "Catalog":
-                tab_content.children = [
-                    catalogs_box,
+                to_display = []
+                if None not in [
                     collections_box,
                     collection_description_box,
                     collection_url_box,
                     collection_dates_box,
-                    items_box,
-                ]
+                ]:
+                    to_display = [
+                        catalogs_box,
+                        collections_box,
+                        collection_description_box,
+                        collection_url_box,
+                        collection_dates_box,
+                        items_box,
+                    ]
+                    if bad_collections_msg is not None:
+                        to_display.append(bad_collections_msg)
+                else:
+                    to_display = [
+                        catalogs_box,
+                        items_box,
+                    ]
+                tab_content.children = to_display
             elif label == "Visualization":
                 tab_content.children = [raster_options]
             tab_widget_children.append(tab_content)
@@ -683,9 +733,16 @@ class StacDiscoveryWidget:
 
             collection_description.value = f'<div style="{styles["desc"]}">{selected_collection["description"]}</div>'
             collection_url.value = f'<a href={selected_collection["href"]} target="_blank">{selected_collection["href"]}</a>'
-            stac_browser_url = selected_collection["href"].replace(
-                "https://", "https://stac-browser.maap-project.org/external/"
-            )
+            # @TODO: We need to come here clean this up to make it more agnostic
+            if "maap" in STAC_BROWSER_URL:
+                stac_browser_url = selected_collection["href"].replace(
+                    "https://", STAC_BROWSER_URL
+                )
+            elif "veda" in STAC_BROWSER_URL:
+                stac_browser_url = selected_collection["href"].replace(
+                    STAC_CATALOG["url"], STAC_BROWSER_URL
+                )
+
             collection_url_browser.value = f'<a href={stac_browser_url} target="_blank"><b>View in STAC Browser</b></a>'
             if selected_collection["start_date"] != "":
                 collection_start_date.value = datetime.strptime(
@@ -715,7 +772,8 @@ class StacDiscoveryWidget:
             if change["new"]:
                 set_collection_options()
 
-        collections_dropdown.observe(collection_changed, names="value")
+        if collections_dropdown is not None:
+            collections_dropdown.observe(collection_changed, names="value")
 
         def collections_filtered_checkbox_changed(change):
             if change["type"] == "change":

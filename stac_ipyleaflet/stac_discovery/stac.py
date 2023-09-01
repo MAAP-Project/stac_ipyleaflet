@@ -5,7 +5,6 @@ from stac_ipyleaflet.utilities.helpers import make_get_request
 from stac_ipyleaflet.constants import RESCALE
 from typing import TypedDict, Optional
 
-
 class OutputCollectionObj(TypedDict):
     id: str
     title: str
@@ -23,71 +22,75 @@ class Stac:
     @staticmethod
     def organize_collections(collections=[]):
         output_collections = []
-        for collection in collections:
-            try:
-                data = collection.to_dict()
+        bad_collections = []
+        try:
+            for collection in collections:
+                try:
+                    data = collection.to_dict()
+                    has_cog = True if data["item_assets"] else False
+                    id = data["id"].strip()
+                    title = data["title"].strip()
+                    start_date = data["extent"]["temporal"]["interval"][0][0]
+                    end_date = data["extent"]["temporal"]["interval"][0][1]
 
-                has_cog = True if data["item_assets"] else False
+                    if start_date is not None:
+                        start_date = start_date.split("T")[0]
+                    else:
+                        start_date = ""
 
-                id = data["id"].strip()
-                title = data["title"].strip()
+                    if end_date is not None:
+                        end_date = end_date.split("T")[0]
+                    else:
+                        end_date = ""
 
-                start_date = data["extent"]["temporal"]["interval"][0][0]
-                end_date = data["extent"]["temporal"]["interval"][0][1]
+                    if (bbox := collection.extent.spatial.bboxes):
+                        bbox = ", ".join(
+                            [str(coord) for coord in bbox[0]]
+                        )
+                        metadata = None
+                        href = None
+                        for l in data["links"]:
+                            if l["rel"] == "about":
+                                metadata = l["href"]
+                            if l["rel"] == "self":
+                                href = l["href"]
 
-                if start_date is not None:
-                    start_date = start_date.split("T")[0]
-                else:
-                    start_date = ""
+                        description = (
+                            data["description"]
+                            .replace("\n", " ")
+                            .replace("\r", " ")
+                            .replace("\\u", " ")
+                            .replace("                 ", " ")
+                        )
 
-                if end_date is not None:
-                    end_date = end_date.split("T")[0]
-                else:
-                    end_date = ""
+                        license = data["license"]
 
-                bbox = ", ".join(
-                    [str(coord) for coord in data["extent"]["spatial"]["bbox"][0]]
-                )
-
-                metadata = None
-                href = None
-                for l in data["links"]:
-                    if l["rel"] == "about":
-                        metadata = l["href"]
-                    if l["rel"] == "self":
-                        href = l["href"]
-
-                description = (
-                    data["description"]
-                    .replace("\n", " ")
-                    .replace("\r", " ")
-                    .replace("\\u", " ")
-                    .replace("                 ", " ")
-                )
-
-                license = data["license"]
-                collection_obj = OutputCollectionObj(
-                    {
-                        "id": id,
-                        "title": title,
-                        "has_cog": has_cog,
-                        "start_date": start_date,
-                        "end_date": end_date,
-                        "bbox": bbox,
-                        "metadata": metadata,
-                        "href": href,
-                        "description": description,
-                        "license": license,
-                    }
-                )
-                output_collections.append(collection_obj)
-            except Exception as err:
-                error = {"error": err, "collection": collection}
-                logging.error(error)
-                return None
+                        collection_obj = OutputCollectionObj(
+                            {
+                                "id": id,
+                                "title": title,
+                                "has_cog": has_cog,
+                                "start_date": start_date,
+                                "end_date": end_date,
+                                "bbox": bbox,
+                                "metadata": metadata,
+                                "href": href,
+                                "description": description,
+                                "license": license,
+                            }
+                        )
+                        output_collections.append(collection_obj)
+                    else:
+                        bad_collections.append(collection.id)
+                except Exception as err:
+                    error = {"message": "Error caught with collection", "error": err, "collection": collection.to_dict()}
+                    logging.error(error)
+        except Exception as err:
+            error = {"message": "Error caught when organizing collections", "error": err}
+            # @TODO: We should report these errors to some type of monitoring service for us to debug
         if len(output_collections) > 0:
             output_collections.sort(key=lambda x: x["title"])
-        return output_collections
+        return output_collections, bad_collections
 
     @staticmethod
     def get_item_info(url=None, **kwargs):
