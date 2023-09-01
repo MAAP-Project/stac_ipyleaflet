@@ -59,6 +59,7 @@ TITILER_STAC_ENDPOINT=https://titiler-stac.maap-project.org
 TITILER_ENDPOINT=https://titiler.maap-project.org
 STAC_CATALOG_NAME=MAAP STAC
 STAC_CATALOG_URL=https://stac.maap-project.org
+STAC_BROWSER_URL=https://stac-browser.maap-project.org/external/
 ```
 5. Run `jupyter lab` and this should reveal two links in the log, you would want to click and open any of those two!
 ![](/public/images/getting-started-links.png)
