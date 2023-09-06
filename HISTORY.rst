@@ -29,3 +29,8 @@ History
 ----------------------
 
 * Bug fix to add dotenv to install_requires
+
+0.3.3 (2023-09-06)
+----------------------
+
+* Bug fix to return collections even when non-compliant STAC collections and items exist
