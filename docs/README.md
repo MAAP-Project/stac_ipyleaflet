@@ -14,7 +14,9 @@ Since `stac_ipyleaflet` is built on top of ipyleaflet, additional layer types ca
 
 - [visualize-**geojson**.ipynb](./sample_notebooks/visualize-geojson.ipynb): Load a geojson file located within your cloud development environment, create a **GeoJSON Layer** and add it to the interactive map.
 
-- [visualize-**raster**.ipynb](./sample_notebooks/visualize-raster.ipynb): Load a raster within your cloud development environment, create a **TileLayer** and add it to the interactive map.
+- [visualize-**mosaic**.ipynb](./sample_notebooks/visualize-mosaic.ipynb): Create a mosaic from an array of COG rasters that are located within your cloud development environment, load it as a **Tile Layer** and add it to the interactive map.
+
+- [visualize-**raster**.ipynb](./sample_notebooks/visualize-raster.ipynb): Load a raster within your cloud development environment, create a **Tile Layer** and add it to the interactive map.
 
 - [visualize-**wms**.ipynb](./sample_notebooks/visualize-geojson.ipynb): Create a **WMS Layer** from a publicly accessible URL and add to the interactive map.
 
