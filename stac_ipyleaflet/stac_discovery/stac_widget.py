@@ -196,15 +196,14 @@ class StacDiscoveryWidget:
                 layout=layouts["default"],
             )
 
-            # @TODO: We need to come here clean this up to make it more agnostic
-            if "maap" in STAC_BROWSER_URL:
-                stac_browser_url = self.stac_data["collection"]["href"].replace(
-                    "https://", STAC_BROWSER_URL
-                )
-            elif "veda" in STAC_BROWSER_URL:
+            # If STAC_BROWSER_URL does not exist or is not set, fallback to STAC URL
+            if STAC_BROWSER_URL is not None:
                 stac_browser_url = self.stac_data["collection"]["href"].replace(
                     STAC_CATALOG["url"], STAC_BROWSER_URL
                 )
+            else:
+                stac_browser_url = self.stac_data["collection"]["href"]
+                
             collection_url_browser = HTML(
                 value=f'<a href={stac_browser_url} target="_blank"><b>View in STAC Browser</b></a>',
                 style=styles["init"],
