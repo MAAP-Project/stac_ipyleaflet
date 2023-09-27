@@ -35,7 +35,7 @@ History
 
 * Bug fix to return collections even when non-compliant STAC collections and items exist
 
-dev
+0.3.4 (2023-09-27)
 ----------------------
 
 * Bug fix, agnostic parsing of STAC_BROWSER_URL (Issue #116)
