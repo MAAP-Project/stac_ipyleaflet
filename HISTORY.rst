@@ -39,3 +39,8 @@ History
 ----------------------
 
 * Bug fix, agnostic parsing of STAC_BROWSER_URL (Issue #116)
+
+0.3.5 (2023-09-27)
+----------------------
+
+* Bug fix, error in manifest of files to include in python package (#120)
