@@ -44,3 +44,9 @@ History
 ----------------------
 
 * Bug fix, error in manifest of files to include in python package (#120)
+
+Unreleased
+----------------------
+
+* Updated datasets for MAAP STAC
+* Removed NASA JPL Biomass Layer
