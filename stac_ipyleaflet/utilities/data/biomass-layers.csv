@@ -1,6 +1,4 @@
 Layer Name,Tiles URL
-NASA JPL,"https://titiler.maap-project.org/mosaics/f0e6f941-4e50-46b3-9463-11b3c2181662/tiles/{z}/{x}/{y}?bidx=1&max_size=1024&resampling_method=nearest&rescale=0,400&return_mask=true&colormap_name=gist_earth_r"
-NASA JPL SE,"https://titiler.maap-project.org/mosaics/210e8e5d-35c0-4549-8fc1-2b2145ad6ecf/tiles/{z}/{x}/{y}?bidx=1&max_size=1024&resampling_method=nearest&rescale=0,150&return_mask=true&colormap_name=reds&nodata=0"
 ICESat-2 Boreal Biomass (Use zoom >=8),"https://titiler.maap-project.org/mosaics/74c9966e-e865-4c6b-bfe8-d12130f9d6ad/tiles/{z}/{x}/{y}.png?bidx=1&rescale=0,400&colormap_name=gist_earth_r"
 ICESat-2 Boreal Biomass SE (Use zoom >=8),"https://titiler.maap-project.org/mosaics/e7e26f4d-9a2f-4a3b-9256-0821e372e40e/tiles/{z}/{x}/{y}.png?bidx=2&rescale=0%2C20&colormap_name=reds"
 NCEO Africa,"https://titiler.maap-project.org/cog/tiles/{z}/{x}/{y}.png?url=s3://maap-landing-zone-gccops/user-added/uploaded_objects/ae841191-8a43-4226-9c5e-db4f500adb45/AGB_map_2017v0m_COG.tif&rescale=0,400&colormap_name=gist_earth_r"
