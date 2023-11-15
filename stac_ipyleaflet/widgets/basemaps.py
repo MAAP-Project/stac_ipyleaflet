@@ -39,7 +39,7 @@ class BasemapsWidget:
             {"layer": basemaps.Esri.NatGeoWorldMap, "name": "Esri National Geographic"},
             {"layer": basemaps.OpenStreetMap.Mapnik, "name": "Open Street Map"},
             {"layer": basemaps.OpenTopoMap, "name": "Open Topo Map"},
-            {"layer": basemaps.Stamen.Toner, "name": "Black & White"},
+            # {"layer": basemaps.Stamen.Toner, "name": "Black & White"},
             {"layer": basemaps.Strava.Water, "name": "Water"},
         ]
 

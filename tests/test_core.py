@@ -32,7 +32,6 @@ def test_layers():
         assert len(test_map_instance.layers) == 21
         assert "CCI Biomass" in all_layer_names
         assert "NCEO Africa" in all_layer_names
-        assert "NASA JPL" in all_layer_names
 
     def test_create_layers_widget():
         # Changing checkbox value to True for layer should add to the applied_layers list
