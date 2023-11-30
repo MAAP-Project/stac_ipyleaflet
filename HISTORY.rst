@@ -50,3 +50,7 @@ History
 
 * Updated datasets for MAAP STAC
 * Removed NASA JPL Biomass Layer
+* Disabled Stamen Basemap (see issue #124)
+
+Unreleased
+----------------------
