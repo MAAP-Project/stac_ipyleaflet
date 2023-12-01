@@ -45,8 +45,12 @@ History
 
 * Bug fix, error in manifest of files to include in python package (#120)
 
-Unreleased
+0.3.6 (2023-11-29)
 ----------------------
 
 * Updated datasets for MAAP STAC
 * Removed NASA JPL Biomass Layer
+* Disabled Stamen Basemap (see issue #124)
+
+Unreleased
+----------------------
