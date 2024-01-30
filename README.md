@@ -1,5 +1,7 @@
 # STAC ipyleaflet
 
+[![DOI](https://zenodo.org/badge/591005076.svg)](https://zenodo.org/doi/10.5281/zenodo.10015863)
+
 ### What
 stac_ipyleaflet is a customized version of [ipyleaflet](https://ipyleaflet.readthedocs.io/en/latest/) built to be an in-jupyter-notebook interactive mapping library that prioritizes access to STAC catalog data. The library provides ([ipywidgets](https://ipywidgets.readthedocs.io/en/stable/)-based) components that are meant to help users working in Jupyter Notebook environments to quickly visualize and interact with geospatial data at different stages throughout their research process.
 
